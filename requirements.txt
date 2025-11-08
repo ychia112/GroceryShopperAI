@@ -1,0 +1,11 @@
+fastapi==0.121.0
+uvicorn[standard]==0.38.0
+
+SQLAlchemy==2.0.44
+greenlet==3.0.3
+asyncmy==0.2.10   
+
+python-dotenv==1.2.1  
+passlib[bcrypt]==1.7.4  
+python-jose[cryptography]==3.5.0 
+bcrypt==3.2.2

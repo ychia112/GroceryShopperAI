@@ -1,0 +1,19 @@
+name: flutter_frontend
+description: Flutter frontend for GroceryShopperAI (chat client)
+publish_to: 'none'
+version: 0.0.1
+environment:
+  sdk: ">=2.18.0 <4.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.1.0
+  web_socket_channel: ^2.1.0
+  flutter_secure_storage: ^8.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
