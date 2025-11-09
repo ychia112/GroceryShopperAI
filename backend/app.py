@@ -130,7 +130,7 @@ async def signup(payload: AuthPayload, session: AsyncSession = Depends(get_db)):
     u = User(
         username=payload.username, 
         password_hash=get_password_hash(payload.password),
-        preferred_llm_model="gemini"  # Set default to OpenAI for reliability
+        preferred_llm_model="openai"  # Set default to OpenAI for reliability
     )
     session.add(u)
     await session.commit()
@@ -569,14 +569,6 @@ async def websocket_endpoint(websocket: WebSocket):
     finally:
         manager.disconnect(websocket, room_id)
 
-# Serve frontend
-app.mount("/", StaticFiles(directory="../frontend", html=True), name="static")
-from pathlib import Path
-
-FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
-
-app.mount(
-    "/.well-known",
-    StaticFiles(directory=str(FRONTEND_DIR / ".well-known"), html=False),
-    name="wellknown",
-)
+# Frontend is now served via Flutter (flutter_frontend/)
+# This FastAPI backend only provides REST API and WebSocket endpoints
+# No need to serve static files here

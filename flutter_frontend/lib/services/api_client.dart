@@ -12,8 +12,11 @@ final String wsUrl = _getWsUrl();
 
 String _getApiBase() {
   if (kIsWeb) {
-    // Web: 使用當前域名 + /api
-    return '${Uri.base.scheme}://${Uri.base.host}:${Uri.base.port}/api';
+    // Web: 使用 localhost:8000 for development
+    // In production, change to your backend URL
+    final backendHost = 'localhost';
+    final backendPort = 8000;
+    return 'http://$backendHost:$backendPort/api';
   } else if (useAndroidEmulator) {
     // Android Emulator
     return 'http://10.0.2.2:8000/api';
@@ -25,9 +28,9 @@ String _getApiBase() {
 
 String _getWsUrl() {
   if (kIsWeb) {
-    // Web: 使用當前域名 + /ws (wss 如果是 https)
-    final proto = Uri.base.scheme == 'https' ? 'wss' : 'ws';
-    return '$proto://${Uri.base.host}:${Uri.base.port}/ws';
+    // Web: 使用 localhost:8000 for development
+    // In production, change to your backend URL
+    return 'ws://localhost:8000/ws';
   } else if (useAndroidEmulator) {
     // Android Emulator
     return 'ws://10.0.2.2:8000/ws';
