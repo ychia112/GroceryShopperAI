@@ -10,10 +10,10 @@ from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from dotenv import load_dotenv
 
-from backend.db import SessionLocal, init_db, User, Message, Room, RoomMember
-from backend.auth import get_password_hash, verify_password, create_access_token, get_current_user_token
-from backend.websocket_manager import ConnectionManager
-from backend.llm import chat_completion, check_tinyllama_available
+from db import SessionLocal, init_db, User, Message, Room, RoomMember
+from auth import get_password_hash, verify_password, create_access_token, get_current_user_token
+from websocket_manager import ConnectionManager
+from llm import chat_completion, check_tinyllama_available
 
 load_dotenv()
 
