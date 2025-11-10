@@ -118,7 +118,11 @@ async def maybe_answer_with_llm(content: str, room_id: int, user_id: int):
 # --------- Routes ---------
 @app.on_event("startup")
 async def on_startup():
-    await init_db()
+    try:
+        await init_db()
+        print("DB initialized successfully")
+    except Exception as e:
+        print(f"DB init failed: {e}")
 
 @app.post("/api/signup")
 async def signup(payload: AuthPayload, session: AsyncSession = Depends(get_db)):
