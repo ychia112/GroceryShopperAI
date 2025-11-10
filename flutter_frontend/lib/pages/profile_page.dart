@@ -18,7 +18,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late String _currentUsername;
   bool _isLoading = true;
-  late String _currentLLMModel;
+  String _currentLLMModel = 'tinyllama';
   List<String> _availableLLMModels = ['tinyllama', 'openai'];
   bool _tinyllamaAvailable = false;
 
@@ -53,6 +53,10 @@ class _ProfilePageState extends State<ProfilePage> {
           _currentLLMModel = 'tinyllama';
           _tinyllamaAvailable = false;
         }
+      } else {
+        _currentUsername = 'User';
+        setState(() => _isLoading = false);
+        return;
       }
     } catch (e) {
       print('Error loading username: $e');
@@ -606,7 +610,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         child: Center(
                           child: Text(
-                            _currentUsername[0].toUpperCase(),
+                            (_currentUsername.isNotEmpty ? _currentUsername[0].toUpperCase() : '?'),
                             style: TextStyle(
                               fontFamily: 'Boska',
                               fontSize: 48,

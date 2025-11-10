@@ -6,7 +6,6 @@ import 'storage_service.dart';
 
 const bool useAndroidEmulator = false;
 
-// 根據平台決定 API 端點
 final String apiBase = _getApiBase();
 final String wsUrl = _getWsUrl();
 
@@ -16,13 +15,16 @@ String _getApiBase() {
     // In production, change to your backend URL
     final backendHost = 'localhost';
     final backendPort = 8000;
-    return 'http://$backendHost:$backendPort/api';
+    //return 'http://$backendHost:$backendPort/api';
+    return 'https://groceryshopperai-52101160479.us-west1.run.app/api';
   } else if (useAndroidEmulator) {
     // Android Emulator
-    return 'http://10.0.2.2:8000/api';
+    //return 'http://10.0.2.2:8000/api';
+    return 'https://groceryshopperai-52101160479.us-west1.run.app/api';
   } else {
     // iOS 或 macOS
-    return 'http://localhost:8000/api';
+    //return 'http://localhost:8000/api';
+    return 'https://groceryshopperai-52101160479.us-west1.run.app/api';
   }
 }
 
@@ -30,13 +32,16 @@ String _getWsUrl() {
   if (kIsWeb) {
     // Web: 使用 localhost:8000 for development
     // In production, change to your backend URL
-    return 'ws://localhost:8000/ws';
+    //return 'ws://localhost:8000/ws';
+    return 'wss://groceryshopperai-52101160479.us-west1.run.app/ws';
   } else if (useAndroidEmulator) {
     // Android Emulator
-    return 'ws://10.0.2.2:8000/ws';
+    //return 'ws://10.0.2.2:8000/ws';
+    return 'wss://groceryshopperai-52101160479.us-west1.run.app/ws';
   } else {
     // iOS 或 macOS
-    return 'ws://localhost:8000/ws';
+    //return 'ws://localhost:8000/ws';
+    return 'wss://groceryshopperai-52101160479.us-west1.run.app/ws';
   }
 }
 
@@ -53,9 +58,13 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> post(String path, Map body) async {
-    print('[ApiClient] POST $path with body: $body');
-    final res = await http.post(Uri.parse(apiBase + path),
-        headers: await _headers(), body: jsonEncode(body));
+    final url = Uri.parse(apiBase + path);
+    print('[ApiClient] POST ' +
+        url.toString() +
+        ' with body: ' +
+        body.toString());
+    final res =
+        await http.post(url, headers: await _headers(), body: jsonEncode(body));
     print('[ApiClient] POST response: ${res.statusCode}');
     if (res.statusCode < 200 || res.statusCode >= 300) {
       String msg = res.body;
@@ -73,8 +82,9 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> get(String path) async {
-    final res =
-        await http.get(Uri.parse(apiBase + path), headers: await _headers());
+    final url = Uri.parse(apiBase + path);
+    print('[ApiClient] GET ' + url.toString());
+    final res = await http.get(url, headers: await _headers());
     if (res.statusCode < 200 || res.statusCode >= 300) {
       throw Exception('HTTP ${res.statusCode}');
     }
@@ -82,9 +92,11 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> put(String path, Map body) async {
-    print('[ApiClient] PUT $path with body: $body');
-    final res = await http.put(Uri.parse(apiBase + path),
-        headers: await _headers(), body: jsonEncode(body));
+    final url = Uri.parse(apiBase + path);
+    print(
+        '[ApiClient] PUT ' + url.toString() + ' with body: ' + body.toString());
+    final res =
+        await http.put(url, headers: await _headers(), body: jsonEncode(body));
     print('[ApiClient] PUT response: ${res.statusCode}');
     if (res.statusCode < 200 || res.statusCode >= 300) {
       String msg = res.body;
