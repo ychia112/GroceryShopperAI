@@ -44,11 +44,9 @@ conda create -n groceryai python=3.11 -y
 conda activate groceryai
 
 # Install dependencies
-cd backend
 pip install -r requirements.txt
 
 # Create .env file
-cd ..
 nano .env
 ```
 
