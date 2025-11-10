@@ -39,8 +39,6 @@ mysql -u root -p < sql/schema.sql
 ## Step 3: Setup Backend (3 minutes)
 
 ```bash
-cd backend
-
 # Create Python environment
 conda create -n groceryai python=3.11 -y
 conda activate groceryai
@@ -49,11 +47,29 @@ conda activate groceryai
 pip install -r requirements.txt
 
 # Create .env file
-cp .env.example .env
+nano .env
+```
 
-# Edit .env and add your API keys (optional):
-# - OPENAI_API_KEY (for OpenAI)
-# - GEMINI_API_KEY (for Google Gemini)
+### Edit .env and add your API keys (optional):
+
+```.env``` template:
+
+```bash
+# Database Configuration
+DATABASE_URL=mysql+asyncmy://chatuser:password@localhost/groceryshopperai
+
+# OpenAI Configuration (for gpt-4o-mini)
+LLM_API_BASE=https://api.openai.com/v1 
+LLM_MODEL=gpt-4o-mini
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Google Gemini Configuration (Optional - for free Gemini model)
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=models/gemini-2.5-flash
+
+# LLM Model Configuration
+LLM_MODEL=tinyllama
+# Options: tinyllama (local), openai (requires OPENAI_API_KEY), gemini (requires GEMINI_API_KEY)
 ```
 
 ---
@@ -81,6 +97,53 @@ INFO:     Application startup complete
 
 ## Step 5: Run Frontend
 
+### Flutter Installation
+Set up Flutter quickly on macOS, Windows, or Linux (Ubuntu) with the easiest available methods.
+
+#### Mac OS
+```bash
+brew install flutter
+```
+
+Verify Setup
+```bash
+flutter doctor
+```
+
+#### Linux / Ubuntu
+```bash
+sudo snap install flutter --classic
+```
+
+Verify Setup
+```bash
+flutter doctor
+```
+
+#### Windows
+**1. Download Flutter SDK**
+
+- Go to Flutter for Windows https://docs.flutter.dev/get-started
+- Download the latest Stable Channel ZIP
+- Extract it to:
+```makefile
+C:\src\flutter
+```
+
+**2. Add Flutter to PATH**
+
+- Search “Edit the system environment variables” → Environment Variables...
+- Add:
+```makefile
+C:\src\flutter\bin
+```
+
+Verify Setup
+```bash
+flutter doctor
+```
+
+---
 Choose ONE of the following:
 
 ### Option A: iOS (macOS only)
