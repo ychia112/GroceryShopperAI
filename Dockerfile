@@ -31,4 +31,4 @@ EXPOSE 8080
 #    This is required for the shell to interpret the $PORT environment variable.
 # 2. Bind Uvicorn to the $PORT provided by Cloud Run, not a hardcoded '8080'.
 # 3. Bind to 0.0.0.0 to accept connections from any IP (required by Cloud Run).
-CMD uvicorn backend.app:app --host 0.0.0.0 --port $PORT
+CMD python -m uvicorn backend.app:app --host 0.0.0.0 --port $PORT
