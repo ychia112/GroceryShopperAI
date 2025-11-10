@@ -1,7 +1,9 @@
 -- Create database and user
 CREATE DATABASE IF NOT EXISTS groceryshopperai CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS 'chatuser'@'localhost' IDENTIFIED BY 'chatpass';
-GRANT ALL PRIVILEGES ON groceryshopperai.* TO 'chatuser'@'localhost';
+-- CREATE USER IF NOT EXISTS 'chatuser'@'localhost' IDENTIFIED BY 'chatpass';
+-- GRANT ALL PRIVILEGES ON groceryshopperai.* TO 'chatuser'@'localhost';
+CREATE USER IF NOT EXISTS 'chatuser'@'%' IDENTIFIED BY 'Chatpass123!';
+GRANT ALL PRIVILEGES ON groceryshopperai.* TO 'chatuser'@'%';
 FLUSH PRIVILEGES;
 
 USE groceryshopperai;
