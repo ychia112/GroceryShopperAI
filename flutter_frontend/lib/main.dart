@@ -29,7 +29,7 @@ class _MyAppState extends State<MyApp> {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
           return MaterialApp(
-            title: 'GroceryChat',
+            title: 'Grocery AI',
             theme: lightTheme,
             darkTheme: darkTheme,
             themeMode: themeProvider.themeMode,
