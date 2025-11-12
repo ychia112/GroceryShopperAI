@@ -325,7 +325,8 @@ class _ProfilePageState extends State<ProfilePage> {
                               );
                             },
                             activeColor: kSecondary,
-                            inactiveThumbColor: Colors.grey[400],
+                            inactiveThumbColor:
+                                const Color.fromARGB(255, 148, 171, 149),
                           ),
                         ),
                       );

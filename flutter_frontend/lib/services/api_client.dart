@@ -113,6 +113,25 @@ class ApiClient {
     return jsonDecode(res.body) as Map<String, dynamic>;
   }
 
+  Future<void> delete(String path) async {
+    final url = Uri.parse(apiBase + path);
+    print('[ApiClient] DELETE ' + url.toString());
+    final res = await http.delete(url, headers: await _headers());
+    print('[ApiClient] DELETE response: ${res.statusCode}');
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      String msg = res.body;
+      try {
+        final j = jsonDecode(res.body);
+        if (j is Map && (j['detail'] != null || j['error'] != null)) {
+          msg = (j['detail'] ?? j['error']).toString();
+        } else {
+          msg = jsonEncode(j);
+        }
+      } catch (_) {}
+      throw Exception('HTTP ${res.statusCode}: $msg');
+    }
+  }
+
   Future<List<dynamic>> getRooms() async {
     final res = await get('/rooms');
     return res['rooms'] as List<dynamic>;
@@ -139,6 +158,10 @@ class ApiClient {
 
   Future<Map<String, dynamic>> inviteToRoom(int roomId, String username) async {
     return await post('/rooms/$roomId/invite', {'username': username});
+  }
+
+  Future<void> deleteRoom(int roomId) async {
+    return await delete('/rooms/$roomId');
   }
 
   Future<Map<String, dynamic>> getLLMModel() async {

@@ -22,6 +22,7 @@ class _HomePageState extends State<HomePage> {
   final _searchController = TextEditingController();
   bool _showCreateForm = false;
   bool _showSearchForm = false;
+  Map<int, double> _swipeOffsets = {}; // Track swipe position for each room
 
   @override
   void initState() {
@@ -71,6 +72,28 @@ class _HomePageState extends State<HomePage> {
         _pinnedRoomIds.add(roomId);
       }
     });
+  }
+
+  Future<void> _deleteRoom(int roomId) async {
+    try {
+      await apiClient.deleteRoom(roomId);
+      setState(() {
+        _rooms.removeWhere((room) => room['id'] == roomId);
+        _pinnedRoomIds.remove(roomId);
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Chat room deleted')),
+        );
+      }
+    } catch (e) {
+      print('Error deleting room: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete room: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _createRoom() async {
@@ -123,8 +146,7 @@ class _HomePageState extends State<HomePage> {
 
   List<Map<String, dynamic>> _getFilteredRooms() {
     final query = _searchController.text.toLowerCase();
-    if (query.isEmpty) return _rooms;
-    return _rooms
+    return query.isEmpty ? _rooms : _rooms
         .where((room) => room['name'].toLowerCase().contains(query))
         .toList();
   }
@@ -143,39 +165,108 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildRoomTile(Map<String, dynamic> room) {
     final isPinned = _pinnedRoomIds.contains(room['id']);
-    return ListTile(
-      leading: Text('💬', style: TextStyle(fontSize: 24)),
-      title: Text(
-        room['name'],
-        style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w400),
-      ),
-      subtitle: Text('Tap to enter chat'),
-      trailing: IconButton(
-        icon: Icon(
-          isPinned ? Icons.push_pin : Icons.push_pin_outlined,
-          color: isPinned ? Color(0xFF10B981) : Colors.grey,
-        ),
-        onPressed: () => _togglePin(room['id']),
-      ),
-      onTap: () {
-        // 關閉搜尋框
-        if (_showSearchForm) {
-          setState(() {
-            _showSearchForm = false;
-            _searchController.clear();
-          });
-        }
-        // 導航到聊天室
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ChatDetailPage(
-              roomId: room['id'].toString(),
-              roomName: room['name'],
+    final roomId = room['id'];
+    double swipeOffset = _swipeOffsets[roomId] ?? 0;
+    
+    return GestureDetector(
+      onHorizontalDragUpdate: (details) {
+        setState(() {
+          // 向左滑動 (delta.dx 為負)
+          swipeOffset = (swipeOffset + details.delta.dx).clamp(-130, 0).toDouble();
+          _swipeOffsets[roomId] = swipeOffset;
+        });
+      },
+      onHorizontalDragEnd: (details) {
+        // 滑動結束時判斷是否應該固定或彈回
+        setState(() {
+          if (swipeOffset < -65) {
+            // 滑動超過一半，固定在 -130 位置
+            _swipeOffsets[roomId] = -130;
+          } else {
+            // 滑動未超過一半，彈回原位
+            _swipeOffsets[roomId] = 0;
+          }
+        });
+      },
+      child: Stack(
+        children: [
+          // 背景層 - 刪除按鈕（漸變顯示/隱藏）
+          AnimatedOpacity(
+            opacity: swipeOffset != 0 ? 1.0 : 0.0,
+            duration: Duration(milliseconds: 200),
+            child: Container(
+              height: 72,
+              color: Colors.transparent,
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // 刪除按鈕 - 紅色圓形
+                  GestureDetector(
+                    onTap: () {
+                      _deleteRoom(roomId);
+                    },
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.delete, color: Colors.white, size: 24),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                ],
+              ),
             ),
           ),
-        );
-      },
+          // 前景層 - 聊天室卡片
+          Transform.translate(
+            offset: Offset(swipeOffset, 0),
+            child: ListTile(
+              leading: Text('💬', style: TextStyle(fontSize: 24)),
+              title: Text(
+                room['name'],
+                style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w400),
+              ),
+              subtitle: Text('Tap to enter chat'),
+              trailing: IconButton(
+                icon: Icon(
+                  isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+                  color: isPinned ? Color(0xFF10B981) : Colors.grey,
+                ),
+                onPressed: () => _togglePin(room['id']),
+              ),
+              onTap: () {
+                // 如果已滑動，先收回
+                if (swipeOffset != 0) {
+                  setState(() {
+                    _swipeOffsets[roomId] = 0;
+                  });
+                  return;
+                }
+                
+                if (_showSearchForm) {
+                  setState(() {
+                    _showSearchForm = false;
+                    _searchController.clear();
+                  });
+                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChatDetailPage(
+                      roomId: room['id'].toString(),
+                      roomName: room['name'],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
