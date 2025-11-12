@@ -149,21 +149,36 @@ async def login(payload: AuthPayload, session: AsyncSession = Depends(get_db)):
 @app.get("/api/rooms")
 async def get_rooms(username: str = Depends(get_current_user_token), session: AsyncSession = Depends(get_db)):
     """Get all rooms that the user is a member of (excluding soft-deleted)"""
-    res = await session.execute(select(User).where(User.username == username))
-    u = res.scalar_one_or_none()
-    if not u:
-        raise HTTPException(status_code=401, detail="Invalid user")
-    
-    # Get all rooms this user is a member of and NOT deleted
-    member_res = await session.execute(
-        select(Room).join(RoomMember).where(
-            (RoomMember.user_id == u.id) & (RoomMember.deleted_at == None)
+    try:
+        print(f"[GetRooms] Fetching rooms for user: {username}")
+        
+        res = await session.execute(select(User).where(User.username == username))
+        u = res.scalar_one_or_none()
+        if not u:
+            print(f"[GetRooms] User {username} not found")
+            raise HTTPException(status_code=401, detail="Invalid user")
+        
+        print(f"[GetRooms] User {username} (id={u.id}) found")
+        
+        # Get all rooms this user is a member of and NOT deleted
+        member_res = await session.execute(
+            select(Room).join(RoomMember).where(
+                (RoomMember.user_id == u.id) & (RoomMember.deleted_at == None)
+            )
         )
-    )
-    rooms = member_res.scalars().all()
-    return {
-        "rooms": [{"id": r.id, "name": r.name, "created_at": str(r.created_at)} for r in rooms]
-    }
+        rooms = member_res.scalars().all()
+        print(f"[GetRooms] Found {len(rooms)} active rooms for user {username}")
+        
+        return {
+            "rooms": [{"id": r.id, "name": r.name, "created_at": str(r.created_at)} for r in rooms]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[GetRooms] ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to fetch rooms: {str(e)}")
 
 @app.post("/api/rooms")
 async def create_room(payload: RoomPayload, username: str = Depends(get_current_user_token), session: AsyncSession = Depends(get_db)):
@@ -201,46 +216,73 @@ async def delete_room(room_id: int, username: str = Depends(get_current_user_tok
     """
     from datetime import datetime
     
-    # Get current user
-    res = await session.execute(select(User).where(User.username == username))
-    user = res.scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid user")
-    
-    # Check if room exists
-    room = await session.get(Room, room_id)
-    if not room:
-        raise HTTPException(status_code=404, detail="Room not found")
-    
-    # Get the room member entry for this user
-    member_res = await session.execute(
-        select(RoomMember).where(
-            (RoomMember.room_id == room_id) & (RoomMember.user_id == user.id)
+    try:
+        print(f"[DeleteRoom] User {username} attempting to delete room {room_id}")
+        
+        # Get current user
+        res = await session.execute(select(User).where(User.username == username))
+        user = res.scalar_one_or_none()
+        if not user:
+            print(f"[DeleteRoom] User {username} not found")
+            raise HTTPException(status_code=401, detail="Invalid user")
+        
+        print(f"[DeleteRoom] Found user: {user.username} (id={user.id})")
+        
+        # Check if room exists
+        room = await session.get(Room, room_id)
+        if not room:
+            print(f"[DeleteRoom] Room {room_id} not found")
+            raise HTTPException(status_code=404, detail="Room not found")
+        
+        print(f"[DeleteRoom] Found room: {room.name} (id={room.id})")
+        
+        # Get the room member entry for this user
+        member_res = await session.execute(
+            select(RoomMember).where(
+                (RoomMember.room_id == room_id) & (RoomMember.user_id == user.id)
+            )
         )
-    )
-    member = member_res.scalar_one_or_none()
-    if not member:
-        raise HTTPException(status_code=404, detail="User is not a member of this room")
-    
-    # Soft-delete: mark as deleted
-    member.deleted_at = datetime.utcnow()
-    session.add(member)
-    await session.commit()
-    
-    # Check if all members have deleted this room
-    active_members = await session.execute(
-        select(RoomMember).where(
-            (RoomMember.room_id == room_id) & (RoomMember.deleted_at == None)
-        )
-    )
-    active_members_list = active_members.scalars().all()
-    
-    if not active_members_list:
-        # No active members, delete room and all messages
-        await session.delete(room)
+        member = member_res.scalar_one_or_none()
+        if not member:
+            print(f"[DeleteRoom] User {user.id} is not a member of room {room_id}")
+            raise HTTPException(status_code=404, detail="User is not a member of this room")
+        
+        print(f"[DeleteRoom] Found membership: room_id={member.room_id}, user_id={member.user_id}")
+        
+        # Soft-delete: mark as deleted
+        print(f"[DeleteRoom] Marking room {room_id} as deleted for user {user.id}")
+        member.deleted_at = datetime.utcnow()
+        session.add(member)
         await session.commit()
+        print(f"[DeleteRoom] Successfully marked room {room_id} as deleted for user {user.id}")
+        
+        # Check if all members have deleted this room
+        active_members = await session.execute(
+            select(RoomMember).where(
+                (RoomMember.room_id == room_id) & (RoomMember.deleted_at == None)
+            )
+        )
+        active_members_list = active_members.scalars().all()
+        
+        print(f"[DeleteRoom] Active members count: {len(active_members_list)}")
+        
+        if not active_members_list:
+            # No active members, delete room and all messages
+            print(f"[DeleteRoom] No active members left, permanently deleting room {room_id}")
+            await session.delete(room)
+            await session.commit()
+            print(f"[DeleteRoom] Room {room_id} permanently deleted")
+        
+        print(f"[DeleteRoom] Operation completed successfully for room {room_id}")
+        return {"ok": True, "message": "Room deleted for you"}
     
-    return {"ok": True, "message": "Room deleted for you"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[DeleteRoom] ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to delete room: {str(e)}")
 
 @app.get("/api/rooms/{room_id}/members")
 async def get_room_members(room_id: int, session: AsyncSession = Depends(get_db)):
