@@ -15,6 +15,10 @@ from auth import get_password_hash, verify_password, create_access_token, get_cu
 from websocket_manager import ConnectionManager
 from llm import chat_completion, AVAILABLE_MODELS
 
+from llm_modules.planner import generate_group_plan
+from llm_modules.matcher import suggest_invites
+from llm_modules.llm_utils import format_chat_history
+
 load_dotenv()
 
 APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
@@ -490,3 +494,93 @@ async def websocket_endpoint(websocket: WebSocket):
 # Frontend is now served via Flutter (flutter_frontend/)
 # This FastAPI backend only provides REST API and WebSocket endpoints
 # No need to serve static files here
+
+
+# --------- LLM functions ---------
+# Planning
+@app.post("/api/rooms/{room_id}/ai-plan")
+async def api_generate_plan(room_id: int, payload: dict, username: str = Depends(get_current_user_token), session: AsyncSession = Depends(get_db),):
+    """
+    Generate an AI-generated group plan for a room.
+    Goal is optional - if not provided, it will be inferred from chat history.
+    """
+    
+    override_goal = payload.get("goal")  # optional override from frontend
+    
+    res = await session.execute(select(User).where(User.username == username))
+    user = res.scalar_one_or_none()
+    model_name = user.preferred_llm_model if user else "openai"
+    
+    members_res = await session.execute(
+        select(User.username)
+        .join(RoomMember, RoomMember.user_id == User.id)
+        .where(RoomMember.room_id == room_id)
+    )
+    members = [row[0] for row in members_res.fetchall()]
+    
+    msgs_res = await session.execute(
+        select(Message)
+        .where(Message.room_id == room_id)
+        .order_by(Message.created_at)
+    )
+    msgs = msgs_res.scalars().all()
+    
+    chat_history = []
+    for m in msgs:
+        role = "assistant" if m.is_bot else "user"
+        chat_history.append({"role": role, "content": m.content})
+        
+    plan = await generate_group_plan(
+        chat_history=chat_history,
+        goal=override_goal,
+        members=members,
+        model_name=model_name,
+    )
+    
+    return {"plan": plan}
+
+# Matching Suggestion
+@app.post("/api/rooms/{room_id}/ai-matching")
+async def api_generate_matching(room_id: int, payload: dict, username: str = Depends(get_current_user_token), session: AsyncSession = Depends(get_db),):
+    """
+    AI Matching Suggestion module:
+    - Extract goal automatically unless provided by frontend
+    - Detect assigned members from chat history
+    - Suggest available members or missing roles
+    """
+    
+    override_goal = payload.get("goal")
+    
+    res = await session.execute(select(User).where(User.username == username))
+    user = res.scalar_one_or_none()
+    model_name = user.preferred_llm_model if user else "openai"
+    
+    members_res = await session.execute(
+        select(User.username)
+        .join(RoomMember, RoomMember.user_id == User.id)
+        .where(RoomMember.room_id == room_id)
+    )
+    members = [row[0] for row in members_res.fetchall()]
+    
+    # Get chat history
+    msgs_res = await session.execute(
+        select(Message)
+        .where(Message.room_id == room_id)
+        .order_by(Message.created_at) 
+    )
+    msgs = msgs_res.scalers().all()
+    
+    chat_history = []
+    for m in msgs:
+        role = "assistant" if m.is_bot else "user"
+        chat_history.append({"role": role, "content": m.content})
+        
+    # Generate suggestion
+    suggestions = await suggest_invites(
+        members=members,
+        chat_history=chat_history,
+        goal=override_goal,
+        model_name=model_name,
+    )
+    
+    return {"suggestions": suggestions}
