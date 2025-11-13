@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'pages/login_page.dart';
-import 'pages/home_page.dart';
+import 'pages/main_shell.dart';
 import 'themes/light_mode.dart';
 import 'themes/dark_mode.dart';
 import 'providers/theme_provider.dart';
@@ -45,7 +45,7 @@ class _MyAppState extends State<MyApp> {
                 }
 
                 // If logged in, go to home page, otherwise go to login page
-                return authProvider.isLoggedIn ? HomePage() : LoginPage();
+                return authProvider.isLoggedIn ? MainShell() : LoginPage();
               },
             ),
             debugShowCheckedModeBanner: false,
