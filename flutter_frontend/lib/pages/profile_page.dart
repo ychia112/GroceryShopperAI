@@ -194,15 +194,32 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black.withOpacity(0.3)
+                    : Colors.black.withOpacity(0.15),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
         title: Text(
           'Profile',
           style: TextStyle(
             fontFamily: 'Boska',
-            fontSize: 24,
+            fontSize: 28,
             fontWeight: FontWeight.w700,
             color: Theme.of(context).appBarTheme.titleTextStyle?.color,
           ),
         ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())

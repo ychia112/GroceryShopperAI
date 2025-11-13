@@ -145,9 +145,11 @@ class _HomePageState extends State<HomePage> {
 
   List<Map<String, dynamic>> _getFilteredRooms() {
     final query = _searchController.text.toLowerCase();
-    return query.isEmpty ? _rooms : _rooms
-        .where((room) => room['name'].toLowerCase().contains(query))
-        .toList();
+    return query.isEmpty
+        ? _rooms
+        : _rooms
+            .where((room) => room['name'].toLowerCase().contains(query))
+            .toList();
   }
 
   List<Map<String, dynamic>> _getPinnedRooms() {
@@ -166,30 +168,26 @@ class _HomePageState extends State<HomePage> {
     final isPinned = _pinnedRoomIds.contains(room['id']);
     final roomId = room['id'];
     double swipeOffset = _swipeOffsets[roomId] ?? 0;
-    
+
     return GestureDetector(
       onHorizontalDragUpdate: (details) {
         setState(() {
-          // 向左滑動 (delta.dx 為負)
-          swipeOffset = (swipeOffset + details.delta.dx).clamp(-130, 0).toDouble();
+          swipeOffset =
+              (swipeOffset + details.delta.dx).clamp(-130, 0).toDouble();
           _swipeOffsets[roomId] = swipeOffset;
         });
       },
       onHorizontalDragEnd: (details) {
-        // 滑動結束時判斷是否應該固定或彈回
         setState(() {
           if (swipeOffset < -65) {
-            // 滑動超過一半，固定在 -130 位置
             _swipeOffsets[roomId] = -130;
           } else {
-            // 滑動未超過一半，彈回原位
             _swipeOffsets[roomId] = 0;
           }
         });
       },
       child: Stack(
         children: [
-          // 背景層 - 刪除按鈕（漸變顯示/隱藏）
           AnimatedOpacity(
             opacity: swipeOffset != 0 ? 1.0 : 0.0,
             duration: Duration(milliseconds: 200),
@@ -220,14 +218,14 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          // 前景層 - 聊天室卡片
           Transform.translate(
             offset: Offset(swipeOffset, 0),
             child: ListTile(
               leading: Text('💬', style: TextStyle(fontSize: 24)),
               title: Text(
                 room['name'],
-                style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w400),
+                style: TextStyle(
+                    fontFamily: 'Satoshi', fontWeight: FontWeight.w400),
               ),
               subtitle: Text('Tap to enter chat'),
               trailing: IconButton(
@@ -238,14 +236,13 @@ class _HomePageState extends State<HomePage> {
                 onPressed: () => _togglePin(room['id']),
               ),
               onTap: () {
-                // 如果已滑動，先收回
                 if (swipeOffset != 0) {
                   setState(() {
                     _swipeOffsets[roomId] = 0;
                   });
                   return;
                 }
-                
+
                 if (_showSearchForm) {
                   setState(() {
                     _showSearchForm = false;
@@ -283,15 +280,30 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black.withOpacity(0.3)
+                    : Colors.black.withOpacity(0.15),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
         title: Text(
-          'Grocery AI',
+          'Chats',
           style: TextStyle(
             fontFamily: 'Boska',
-            fontSize: 24,
+            fontSize: 28,
             fontWeight: FontWeight.w700,
             color: Theme.of(context).appBarTheme.titleTextStyle?.color,
           ),
         ),
+        centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(Icons.add),
@@ -318,6 +330,8 @@ class _HomePageState extends State<HomePage> {
             },
           ),
         ],
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())

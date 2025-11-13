@@ -19,7 +19,7 @@ class BottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Positioned(
       bottom: 20,
       left: 16,
@@ -30,7 +30,7 @@ class BottomNavBar extends StatelessWidget {
           filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
           child: Container(
             decoration: BoxDecoration(
-              color: isDark 
+              color: isDark
                   ? Colors.black.withValues(alpha: 0.3)
                   : Colors.white.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(50),

@@ -368,7 +368,31 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Chat - ${widget.roomName}'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).brightness == Brightness.dark
+                    ? Colors.black.withOpacity(0.3)
+                    : Colors.black.withOpacity(0.15),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+        title: Text(
+          widget.roomName,
+          style: TextStyle(
+            fontFamily: 'Boska',
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: Icon(Icons.person_add),

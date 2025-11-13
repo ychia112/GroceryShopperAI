@@ -12,8 +12,8 @@ class ContactsPage extends StatefulWidget {
 
 class _ContactsPageState extends State<ContactsPage> {
   List<Map<String, dynamic>> _rooms = [];
-  Map<int, List<Map<String, dynamic>>> _roomMembers = {}; // roomId -> members
-  Map<String, List<int>> _contactRooms = {}; // username -> [roomIds]
+  Map<int, List<Map<String, dynamic>>> _roomMembers = {};
+  Map<String, List<int>> _contactRooms = {};
   bool _isLoading = true;
   String? _selectedContact;
   late String _currentUsername;
@@ -26,11 +26,9 @@ class _ContactsPageState extends State<ContactsPage> {
 
   Future<void> _initData() async {
     try {
-      // 獲取當前用戶名
       final authProvider = context.read<AuthProvider>();
       _currentUsername = authProvider.username ?? 'User';
 
-      // 獲取所有聊天室
       final rooms = await apiClient.getRooms();
       setState(() {
         _rooms = rooms
@@ -41,7 +39,6 @@ class _ContactsPageState extends State<ContactsPage> {
             .toList();
       });
 
-      // 為每個聊天室獲取成員
       for (var room in _rooms) {
         final members = await apiClient.getRoomMembers(room['id']);
         final memberList = members
@@ -55,7 +52,6 @@ class _ContactsPageState extends State<ContactsPage> {
           _roomMembers[room['id']] = memberList;
         });
 
-        // 為每個成員（除了自己）記錄共同的聊天室
         for (var member in memberList) {
           if (member['username'] != _currentUsername) {
             final username = member['username'] as String;
@@ -85,7 +81,7 @@ class _ContactsPageState extends State<ContactsPage> {
 
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('Contacts')),
+        appBar: _buildGradientAppBar('Contacts'),
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -94,7 +90,7 @@ class _ContactsPageState extends State<ContactsPage> {
 
     if (contacts.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: Text('Contacts')),
+        appBar: _buildGradientAppBar('Contacts'),
         body: Center(
           child: Text(
             'No contacts yet\nJoin a chat room to see contacts',
@@ -106,15 +102,11 @@ class _ContactsPageState extends State<ContactsPage> {
     }
 
     if (_selectedContact != null) {
-      // 顯示聯絡人詳情
       return _buildContactDetail(isDark, _selectedContact!);
     }
 
-    // 顯示聯絡人列表
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Contacts'),
-      ),
+      appBar: _buildGradientAppBar('Contacts'),
       body: ListView.builder(
         itemCount: contacts.length,
         itemBuilder: (context, index) {
@@ -148,13 +140,31 @@ class _ContactsPageState extends State<ContactsPage> {
 
   Widget _buildContactDetail(bool isDark, String username) {
     final sharedRoomIds = _contactRooms[username] ?? [];
-    final sharedRooms = _rooms
-        .where((room) => sharedRoomIds.contains(room['id']))
-        .toList();
+    final sharedRooms =
+        _rooms.where((room) => sharedRoomIds.contains(room['id'])).toList();
 
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? [
+                      Colors.black.withOpacity(0.6),
+                      Colors.black.withOpacity(0.2),
+                    ]
+                  : [
+                      Colors.white.withOpacity(0.6),
+                      Colors.white.withOpacity(0.2),
+                    ],
+            ),
+          ),
+        ),
         title: Text(username),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
@@ -164,7 +174,6 @@ class _ContactsPageState extends State<ContactsPage> {
       ),
       body: Column(
         children: [
-          // 頭像和用戶名
           SizedBox(height: 20),
           CircleAvatar(
             radius: 50,
@@ -197,8 +206,6 @@ class _ContactsPageState extends State<ContactsPage> {
             ),
           ),
           SizedBox(height: 24),
-
-          // 共同聊天室列表
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Align(
@@ -244,6 +251,36 @@ class _ContactsPageState extends State<ContactsPage> {
           ),
         ],
       ),
+    );
+  }
+
+  PreferredSizeWidget _buildGradientAppBar(String title) {
+    return AppBar(
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).brightness == Brightness.dark
+                  ? Colors.black.withOpacity(0.3)
+                  : Colors.black.withOpacity(0.15),
+              Colors.transparent,
+            ],
+          ),
+        ),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontFamily: 'Boska',
+          fontSize: 28,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      centerTitle: true,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
     );
   }
 }
