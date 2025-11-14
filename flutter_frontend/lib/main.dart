@@ -49,7 +49,7 @@ class _MyAppState extends State<MyApp> {
                 if (!authProvider.isLoggedIn) {
                   return LoginPage();
                 }
-                
+
                 // Use different shell based on screen size
                 return LayoutBuilder(
                   builder: (context, constraints) {

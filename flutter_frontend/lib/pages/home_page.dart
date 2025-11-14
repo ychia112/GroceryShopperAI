@@ -338,8 +338,9 @@ class _HomePageState extends State<HomePage> {
           : LayoutBuilder(
               builder: (context, constraints) {
                 // Limit width on web/large screens
-                final maxWidth = constraints.maxWidth > 800 ? 800.0 : constraints.maxWidth;
-                
+                final maxWidth =
+                    constraints.maxWidth > 800 ? 800.0 : constraints.maxWidth;
+
                 return Center(
                   child: Container(
                     width: maxWidth,
@@ -349,8 +350,8 @@ class _HomePageState extends State<HomePage> {
                           children: [
                             if (_showSearchForm)
                               Padding(
-                                padding:
-                                    EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 16),
                                 child: Row(
                                   children: [
                                     Expanded(
@@ -374,10 +375,13 @@ class _HomePageState extends State<HomePage> {
                                         width: 40,
                                         height: 40,
                                         decoration: BoxDecoration(
-                                          color: Color(0xFF064E3B).withOpacity(0.2),
-                                          borderRadius: BorderRadius.circular(8),
+                                          color: Color(0xFF064E3B)
+                                              .withOpacity(0.2),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                           border: Border.all(
-                                            color: Color(0xFF064E3B).withOpacity(0.4),
+                                            color: Color(0xFF064E3B)
+                                                .withOpacity(0.4),
                                             width: 1,
                                           ),
                                         ),
@@ -386,109 +390,114 @@ class _HomePageState extends State<HomePage> {
                                           color: Color(0xFF064E3B),
                                           size: 20,
                                         ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (_showCreateForm)
-                      Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        child: Column(
-                          children: [
-                            FrostedGlassTextField(
-                              controller: _createRoomController,
-                              placeholder: 'Enter room name...',
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: FrostedGlassButton(
-                                    label: 'Create',
-                                    onPressed: _createRoom,
-                                    isPrimary: true,
-                                    backgroundColor: Color(0xFF10B981),
-                                  ),
-                                ),
-                                SizedBox(width: 8),
-                                Expanded(
-                                  child: FrostedGlassButton(
-                                    label: 'Cancel',
-                                    onPressed: () {
-                                      setState(() => _showCreateForm = false);
-                                      _createRoomController.clear();
-                                    },
-                                    isPrimary: false,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 16),
-                          ],
-                        ),
-                      ),
-                    Expanded(
-                      child: pinnedRooms.isEmpty && unpinnedRooms.isEmpty
-                          ? Center(
-                              child: Text(
-                                _searchController.text.isEmpty
-                                    ? 'No rooms yet. Create one to get started!'
-                                    : 'No rooms found',
-                                style: TextStyle(
-                                  color: kTextGray,
-                                  fontFamily: 'Satoshi',
-                                ),
-                              ),
-                            )
-                          : SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (pinnedRooms.isNotEmpty) ...[
-                                    Padding(
-                                      padding:
-                                          EdgeInsets.fromLTRB(16, 16, 16, 8),
-                                      child: Text(
-                                        'Pinned',
-                                        style: TextStyle(
-                                          fontFamily: 'Satoshi',
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
-                                          color: kTextGray,
-                                        ),
                                       ),
                                     ),
-                                    ...pinnedRooms
-                                        .map((room) => _buildRoomTile(room))
-                                        .toList(),
+                                  ],
+                                ),
+                              ),
+                            if (_showCreateForm)
+                              Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 16),
+                                child: Column(
+                                  children: [
+                                    FrostedGlassTextField(
+                                      controller: _createRoomController,
+                                      placeholder: 'Enter room name...',
+                                    ),
                                     SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: FrostedGlassButton(
+                                            label: 'Create',
+                                            onPressed: _createRoom,
+                                            isPrimary: true,
+                                            backgroundColor: Color(0xFF10B981),
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Expanded(
+                                          child: FrostedGlassButton(
+                                            label: 'Cancel',
+                                            onPressed: () {
+                                              setState(() =>
+                                                  _showCreateForm = false);
+                                              _createRoomController.clear();
+                                            },
+                                            isPrimary: false,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 16),
                                   ],
-                                  if (unpinnedRooms.isNotEmpty) ...[
-                                    Padding(
-                                      padding:
-                                          EdgeInsets.fromLTRB(16, 8, 16, 8),
+                                ),
+                              ),
+                            Expanded(
+                              child: pinnedRooms.isEmpty &&
+                                      unpinnedRooms.isEmpty
+                                  ? Center(
                                       child: Text(
-                                        'All Rooms',
+                                        _searchController.text.isEmpty
+                                            ? 'No rooms yet. Create one to get started!'
+                                            : 'No rooms found',
                                         style: TextStyle(
-                                          fontFamily: 'Satoshi',
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w700,
                                           color: kTextGray,
+                                          fontFamily: 'Satoshi',
                                         ),
                                       ),
+                                    )
+                                  : SingleChildScrollView(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (pinnedRooms.isNotEmpty) ...[
+                                            Padding(
+                                              padding: EdgeInsets.fromLTRB(
+                                                  16, 16, 16, 8),
+                                              child: Text(
+                                                'Pinned',
+                                                style: TextStyle(
+                                                  fontFamily: 'Satoshi',
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: kTextGray,
+                                                ),
+                                              ),
+                                            ),
+                                            ...pinnedRooms
+                                                .map((room) =>
+                                                    _buildRoomTile(room))
+                                                .toList(),
+                                            SizedBox(height: 8),
+                                          ],
+                                          if (unpinnedRooms.isNotEmpty) ...[
+                                            Padding(
+                                              padding: EdgeInsets.fromLTRB(
+                                                  16, 8, 16, 8),
+                                              child: Text(
+                                                'All Rooms',
+                                                style: TextStyle(
+                                                  fontFamily: 'Satoshi',
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: kTextGray,
+                                                ),
+                                              ),
+                                            ),
+                                            ...unpinnedRooms
+                                                .map((room) =>
+                                                    _buildRoomTile(room))
+                                                .toList(),
+                                          ],
+                                        ],
+                                      ),
                                     ),
-                                    ...unpinnedRooms
-                                        .map((room) => _buildRoomTile(room))
-                                        .toList(),
-                                  ],
-                                ],
-                              ),
                             ),
-                    ),
-                  ],
-                ),
+                          ],
+                        ),
                       ],
                     ),
                   ),

@@ -109,8 +109,9 @@ class _ContactsPageState extends State<ContactsPage> {
       appBar: _buildGradientAppBar('Contacts'),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final maxWidth = constraints.maxWidth > 800 ? 800.0 : constraints.maxWidth;
-          
+          final maxWidth =
+              constraints.maxWidth > 800 ? 800.0 : constraints.maxWidth;
+
           return Center(
             child: Container(
               width: maxWidth,
@@ -121,7 +122,8 @@ class _ContactsPageState extends State<ContactsPage> {
                   return ListTile(
                     leading: CircleAvatar(
                       radius: 24,
-                      backgroundColor: isDark ? Colors.grey[800] : Colors.grey[300],
+                      backgroundColor:
+                          isDark ? Colors.grey[800] : Colors.grey[300],
                       child: Text(
                         username[0].toUpperCase(),
                         style: TextStyle(

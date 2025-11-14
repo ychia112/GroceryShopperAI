@@ -33,7 +33,7 @@ class _WebShellState extends State<WebShell> {
       if (authProvider.token != null) {
         apiClient.token = authProvider.token;
       }
-      
+
       final rooms = await apiClient.getRooms();
       setState(() {
         _rooms = rooms
@@ -57,7 +57,7 @@ class _WebShellState extends State<WebShell> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -121,7 +121,8 @@ class _WebShellState extends State<WebShell> {
                   ? Center(
                       child: Text(
                         'No chat rooms yet',
-                        style: TextStyle(color: kTextGray, fontFamily: 'Satoshi'),
+                        style:
+                            TextStyle(color: kTextGray, fontFamily: 'Satoshi'),
                       ),
                     )
                   : ListView.builder(
@@ -130,7 +131,7 @@ class _WebShellState extends State<WebShell> {
                         final room = _rooms[index];
                         final roomId = room['id'].toString();
                         final isSelected = _selectedRoomId == roomId;
-                        
+
                         return Container(
                           decoration: BoxDecoration(
                             color: isSelected
@@ -143,8 +144,9 @@ class _WebShellState extends State<WebShell> {
                               room['name'],
                               style: TextStyle(
                                 fontFamily: 'Satoshi',
-                                fontWeight:
-                                    isSelected ? FontWeight.w700 : FontWeight.w400,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w400,
                               ),
                             ),
                             onTap: () {
@@ -155,14 +157,14 @@ class _WebShellState extends State<WebShell> {
                       },
                     ),
         ),
-        
+
         // Right Side - Chat Content
         Expanded(
           child: _selectedRoomId != null
               ? ChatDetailPage(
                   roomId: _selectedRoomId!,
-                  roomName: _rooms
-                      .firstWhere((r) => r['id'].toString() == _selectedRoomId)['name'],
+                  roomName: _rooms.firstWhere(
+                      (r) => r['id'].toString() == _selectedRoomId)['name'],
                 )
               : Center(
                   child: Text(
@@ -182,7 +184,7 @@ class _WebShellState extends State<WebShell> {
     required VoidCallback onPressed,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 8),
       child: GestureDetector(
@@ -191,7 +193,9 @@ class _WebShellState extends State<WebShell> {
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: isActive
-                ? (isDark ? Colors.cyan.withValues(alpha: 0.1) : Colors.blue.withValues(alpha: 0.1))
+                ? (isDark
+                    ? Colors.cyan.withValues(alpha: 0.1)
+                    : Colors.blue.withValues(alpha: 0.1))
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
