@@ -223,81 +223,88 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  // Avatar with Edit Button
-                  Stack(
-                    children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? kDarkCard
-                              : kPrimary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            (_currentUsername.isNotEmpty
-                                ? _currentUsername[0].toUpperCase()
-                                : '?'),
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final maxWidth = constraints.maxWidth > 800 ? 800.0 : constraints.maxWidth;
+                
+                return Center(
+                  child: Container(
+                    width: maxWidth,
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          // Avatar with Edit Button
+                          Stack(
+                            children: [
+                              Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).brightness == Brightness.dark
+                                      ? kDarkCard
+                                      : kPrimary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    (_currentUsername.isNotEmpty
+                                        ? _currentUsername[0].toUpperCase()
+                                        : '?'),
+                                    style: TextStyle(
+                                      fontFamily: 'Boska',
+                                      fontSize: 48,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Edit Button at Bottom Right
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: GestureDetector(
+                                  onTap: _changeAvatar,
+                                  child: Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: kSecondary,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.edit,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 20),
+
+                          // Username
+                          Text(
+                            _currentUsername,
                             style: TextStyle(
                               fontFamily: 'Boska',
-                              fontSize: 48,
+                              fontSize: 24,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: kTextDark,
                             ),
                           ),
-                        ),
-                      ),
-                      // Edit Button at Bottom Right
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: _changeAvatar,
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: kSecondary,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2,
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.edit,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20),
+                          SizedBox(height: 30),
 
-                  // Username
-                  Text(
-                    _currentUsername,
-                    style: TextStyle(
-                      fontFamily: 'Boska',
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: kTextDark,
-                    ),
-                  ),
-                  SizedBox(height: 30),
-
-                  // Settings Section
-                  Consumer<ThemeProvider>(
-                    builder: (context, themeProvider, _) {
-                      final isDarkMode =
+                          // Settings Section
+                          Consumer<ThemeProvider>(
+                            builder: (context, themeProvider, _) {
+                              final isDarkMode =
                           Theme.of(context).brightness == Brightness.dark;
                       return Container(
                         margin: EdgeInsets.only(bottom: 12),
@@ -397,6 +404,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ],
               ),
+                    ),
+                  ),
+                );
+              },
             ),
     );
   }

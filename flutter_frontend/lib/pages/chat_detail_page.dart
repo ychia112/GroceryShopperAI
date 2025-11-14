@@ -36,6 +36,27 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     _initializeChat();
   }
 
+  @override
+  void didUpdateWidget(ChatDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If roomId changed, reconnect to new room
+    if (oldWidget.roomId != widget.roomId) {
+      _channel.sink.close();
+      _messages.clear();
+      _hasError = false;
+      _isConnecting = true;
+      _initializeChat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _channel.sink.close();
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   Future<void> _initializeChat() async {
     try {
       final storageService = getStorageService();
@@ -322,14 +343,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   @override
-  void dispose() {
-    _messageController.dispose();
-    _scrollController.dispose();
-    _channel.sink.close();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     // If there's an error during initialization, show error message
     if (_hasError) {
@@ -400,24 +413,31 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: _isConnecting
-                ? Center(child: CircularProgressIndicator())
-                : _messages.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No messages yet',
-                          style: TextStyle(
-                              color: kTextGray, fontFamily: 'Satoshi'),
-                        ),
-                      )
-                    : ListView.builder(
-                        controller: _scrollController,
-                        reverse: false,
-                        itemCount: _messages.length,
-                        itemBuilder: (_, i) {
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth > 800 ? 800.0 : constraints.maxWidth;
+          
+          return Center(
+            child: Container(
+              width: maxWidth,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: _isConnecting
+                        ? Center(child: CircularProgressIndicator())
+                        : _messages.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No messages yet',
+                                  style: TextStyle(
+                                      color: kTextGray, fontFamily: 'Satoshi'),
+                                ),
+                              )
+                            : ListView.builder(
+                                controller: _scrollController,
+                                reverse: false,
+                                itemCount: _messages.length,
+                                itemBuilder: (_, i) {
                           final msg = _messages[i];
                           final isCurrentUser =
                               msg.username == _currentUsername;
@@ -556,7 +576,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               ],
             ),
           ),
-        ],
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
