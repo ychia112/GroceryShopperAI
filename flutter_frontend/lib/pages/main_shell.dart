@@ -45,7 +45,7 @@ class _MainShellState extends State<MainShell> {
         children: [
           PageView(
             controller: _pageController,
-            physics: NeverScrollableScrollPhysics(), // 禁用滑動，只能點擊按鈕切換
+            physics: AlwaysScrollableScrollPhysics(),
             onPageChanged: (index) {
               setState(() {
                 _currentIndex = index;
@@ -57,9 +57,8 @@ class _MainShellState extends State<MainShell> {
               ProfilePage(),
             ],
           ),
-          // 底部導航欄
           Positioned(
-            bottom: 20,
+            bottom: 30,
             left: 0,
             right: 0,
             child: Center(
@@ -68,7 +67,8 @@ class _MainShellState extends State<MainShell> {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
                   child: Container(
-                    width: 260,
+                    width: 200,
+                    height: 60,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
@@ -92,7 +92,8 @@ class _MainShellState extends State<MainShell> {
                       ),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                      padding:
+                          EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -136,29 +137,12 @@ class _MainShellState extends State<MainShell> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onPressed,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 18,
-            color: isActive
-                ? (isDark ? Colors.cyan : Colors.blue)
-                : (isDark ? Colors.white70 : Colors.black54),
-          ),
-          SizedBox(height: 1),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 7,
-              color: isActive
-                  ? (isDark ? Colors.cyan : Colors.blue)
-                  : (isDark ? Colors.white70 : Colors.black54),
-              fontFamily: 'Satoshi',
-              fontWeight: isActive ? FontWeight.bold : FontWeight.w400,
-            ),
-          ),
-        ],
+      child: Icon(
+        icon,
+        size: 28,
+        color: isActive
+            ? (isDark ? Colors.cyan : Colors.blue)
+            : (isDark ? Colors.white70 : Colors.black54),
       ),
     );
   }

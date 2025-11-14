@@ -335,49 +335,57 @@ class _HomePageState extends State<HomePage> {
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
-          : Stack(
-              children: [
-                Column(
-                  children: [
-                    if (_showSearchForm)
-                      Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        child: Row(
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                // Limit width on web/large screens
+                final maxWidth = constraints.maxWidth > 800 ? 800.0 : constraints.maxWidth;
+                
+                return Center(
+                  child: Container(
+                    width: maxWidth,
+                    child: Stack(
+                      children: [
+                        Column(
                           children: [
-                            Expanded(
-                              child: FrostedGlassTextField(
-                                controller: _searchController,
-                                placeholder: 'Search room name...',
-                                onChanged: (_) {
-                                  setState(() {});
-                                },
-                              ),
-                            ),
-                            SizedBox(width: 8),
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _showSearchForm = false;
-                                  _searchController.clear();
-                                });
-                              },
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: Color(0xFF064E3B).withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: Color(0xFF064E3B).withOpacity(0.4),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.close,
-                                  color: Color(0xFF064E3B),
-                                  size: 20,
-                                ),
+                            if (_showSearchForm)
+                              Padding(
+                                padding:
+                                    EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: FrostedGlassTextField(
+                                        controller: _searchController,
+                                        placeholder: 'Search room name...',
+                                        onChanged: (_) {
+                                          setState(() {});
+                                        },
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          _showSearchForm = false;
+                                          _searchController.clear();
+                                        });
+                                      },
+                                      child: Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: Color(0xFF064E3B).withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: Color(0xFF064E3B).withOpacity(0.4),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.close,
+                                          color: Color(0xFF064E3B),
+                                          size: 20,
+                                        ),
                               ),
                             ),
                           ],
@@ -481,7 +489,11 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-              ],
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
     );
   }

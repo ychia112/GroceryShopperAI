@@ -107,31 +107,42 @@ class _ContactsPageState extends State<ContactsPage> {
 
     return Scaffold(
       appBar: _buildGradientAppBar('Contacts'),
-      body: ListView.builder(
-        itemCount: contacts.length,
-        itemBuilder: (context, index) {
-          final username = contacts[index];
-          return ListTile(
-            leading: CircleAvatar(
-              radius: 24,
-              backgroundColor: isDark ? Colors.grey[800] : Colors.grey[300],
-              child: Text(
-                username[0].toUpperCase(),
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black,
-                ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth > 800 ? 800.0 : constraints.maxWidth;
+          
+          return Center(
+            child: Container(
+              width: maxWidth,
+              child: ListView.builder(
+                itemCount: contacts.length,
+                itemBuilder: (context, index) {
+                  final username = contacts[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      radius: 24,
+                      backgroundColor: isDark ? Colors.grey[800] : Colors.grey[300],
+                      child: Text(
+                        username[0].toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ),
+                    title: Text(username),
+                    subtitle: Text(
+                      '${_contactRooms[username]!.length} shared chat room${_contactRooms[username]!.length == 1 ? '' : 's'}',
+                      style: TextStyle(color: kTextGray, fontSize: 12),
+                    ),
+                    onTap: () {
+                      setState(() => _selectedContact = username);
+                    },
+                  );
+                },
               ),
             ),
-            title: Text(username),
-            subtitle: Text(
-              '${_contactRooms[username]!.length} shared chat room${_contactRooms[username]!.length == 1 ? '' : 's'}',
-              style: TextStyle(color: kTextGray, fontSize: 12),
-            ),
-            onTap: () {
-              setState(() => _selectedContact = username);
-            },
           );
         },
       ),
