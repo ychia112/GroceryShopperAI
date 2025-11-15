@@ -51,6 +51,12 @@ class RoomPayload(BaseModel):
 
 class InvitePayload(BaseModel):
     username: str
+    
+class AIPlanPayload(BaseModel):
+    goal: Optional[str] = None
+    
+class AIMatchingPayload(BaseModel):
+    goal: Optional[str] = None
 
 # --------- Dependencies ---------
 async def get_db() -> AsyncSession:
@@ -499,13 +505,13 @@ async def websocket_endpoint(websocket: WebSocket):
 # --------- LLM functions ---------
 # Planning
 @app.post("/api/rooms/{room_id}/ai-plan")
-async def api_generate_plan(room_id: int, payload: dict, username: str = Depends(get_current_user_token), session: AsyncSession = Depends(get_db),):
+async def api_generate_plan(room_id: int, payload: AIPlanPayload, username: str = Depends(get_current_user_token), session: AsyncSession = Depends(get_db),):
     """
     Generate an AI-generated group plan for a room.
     Goal is optional - if not provided, it will be inferred from chat history.
     """
     
-    override_goal = payload.get("goal")  # optional override from frontend
+    override_goal = payload.goal  # optional override from frontend
     
     res = await session.execute(select(User).where(User.username == username))
     user = res.scalar_one_or_none()
@@ -541,7 +547,7 @@ async def api_generate_plan(room_id: int, payload: dict, username: str = Depends
 
 # Matching Suggestion
 @app.post("/api/rooms/{room_id}/ai-matching")
-async def api_generate_matching(room_id: int, payload: dict, username: str = Depends(get_current_user_token), session: AsyncSession = Depends(get_db),):
+async def api_generate_matching(room_id: int, payload: AIMatchingPayload, username: str = Depends(get_current_user_token), session: AsyncSession = Depends(get_db),):
     """
     AI Matching Suggestion module:
     - Extract goal automatically unless provided by frontend
@@ -549,7 +555,7 @@ async def api_generate_matching(room_id: int, payload: dict, username: str = Dep
     - Suggest available members or missing roles
     """
     
-    override_goal = payload.get("goal")
+    override_goal = payload.goal
     
     res = await session.execute(select(User).where(User.username == username))
     user = res.scalar_one_or_none()
