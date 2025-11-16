@@ -7,15 +7,18 @@ WORKDIR /app
 # Install system dependencies required for building some Python packages (e.g., asyncmy, psycopg2)
 RUN apt-get update && apt-get install -y gcc libpq-dev && rm -rf /var/lib/apt/lists/*
 
-# Copy the dependency file into the container
-COPY requirements.txt .
+# ---------------------------------------------------------
+# 1. Copy ONLY requirements.txt at repo root
+# ---------------------------------------------------------
+COPY requirements.txt /app/requirements.txt
 
-# Install Python dependencies without caching to reduce image size
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
-# Copy all application files into the container
-# This copies everything from your local repo root to /app in the container
-COPY . .
+# ---------------------------------------------------------
+# 2. Copy ONLY backend/ directory into /app/backend
+# ---------------------------------------------------------
+COPY backend /app/backend
 
 # Set the working directory to your backend folder
 WORKDIR /app/backend
