@@ -1,5 +1,6 @@
 print("🔥 Running backend version: 2025-11-16 01:00")
 import os
+import json
 import asyncio
 from typing import Optional, List
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, status, Request, Body
@@ -11,14 +12,17 @@ from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from dotenv import load_dotenv
 
-from db import SessionLocal, init_db, User, Message, Room, RoomMember, Inventory
+from db import SessionLocal, init_db, User, Message, Room, RoomMember, Inventory, GroceryItem
 from auth import get_password_hash, verify_password, create_access_token, get_current_user_token
 from websocket_manager import ConnectionManager
 from llm import chat_completion, AVAILABLE_MODELS
 
+from llm_modules.llm_utils import format_chat_history
 from llm_modules.planner import generate_group_plan
 from llm_modules.matcher import suggest_invites
-from llm_modules.llm_utils import format_chat_history
+from llm_modules.inventory_analyzer import analyze_inventory
+from llm_modules.menu_generator import generate_menu
+from llm_modules.procurement_planner import generate_restock_plan
 
 load_dotenv()
 
@@ -82,6 +86,120 @@ async def broadcast_message(session: AsyncSession, msg: Message, room_id: int):
             "created_at": str(msg.created_at)
         }
     }, room_id)
+    
+async def broadcast_ai_event(room_id: int, event_type: str, narrative: str, payload: dict):
+    """
+    Sends a strutured AI event to frontend for rendering custom UI.
+    """
+    await manager.broadcast({
+        "type": "ai_event",
+        "event": event_type,
+        "room_id": room_id,
+        "narrative": narrative,
+        "payload": payload,
+    }, room_id)
+    
+
+async def handle_inventory_command(content: str, room_id: int, user_id: int):
+    """
+    Handle @inventory messages:
+    - If only '@inventory' → send instructions
+    - If '@inventory' plus lines → parse and upsert into Inventory table
+    """
+    # Strip the trigger word
+    cleaned = content.replace("@inventory", "").strip()
+
+    # Case 1: Just '@inventory' → explain the format
+    if not cleaned:
+        reply_text = (
+            "Let's load your inventory.\n\n"
+            "Reply with a message in the following format:\n"
+            "@inventory\n"
+            "product_name, stock_quantity, safety_stock_level\n\n"
+            "Example:\n"
+            "@inventory\n"
+            "Tomatoes, 50, 20   <-- Tomatoes = product name, 50 = current stock, 20 = safety stock threshold\n"
+            "Olive oil, 10, 3   <-- Olive oil = product name, 10 = current stock, 3 = safety stock threshold\n"
+            "Cheese, 5, 2\n\n"
+            "Make sure each item is on a separate line."
+        )
+        async with SessionLocal() as session:
+            bot_msg = Message(
+                room_id=room_id,
+                user_id=None,
+                content=reply_text,
+                is_bot=True,
+            )
+            session.add(bot_msg)
+            await session.commit()
+            await session.refresh(bot_msg)
+            await broadcast_message(session, bot_msg, room_id)
+        return
+
+    # Case 2: @inventory plus data lines
+    lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+    parsed_items = []
+    errors = []
+
+    for line in lines:
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) != 3:
+            errors.append(f"- '{line}' (expected: name, stock, safety_stock)")
+            continue
+
+        name, stock_str, safety_str = parts
+        try:
+            stock_val = int(stock_str)
+            safety_val = int(safety_str)
+        except ValueError:
+            errors.append(f"- '{line}' (stock and safety_stock must be integers)")
+            continue
+
+        parsed_items.append((name, stock_val, safety_val))
+
+    async with SessionLocal() as session:
+        # Upsert per product for this user
+        for name, stock_val, safety_val in parsed_items:
+            res = await session.execute(
+                select(Inventory).where(
+                    (Inventory.user_id == user_id)
+                    & (Inventory.product_name == name)
+                )
+            )
+            inv = res.scalar_one_or_none()
+            if inv:
+                inv.stock = stock_val
+                inv.safety_stock_level = safety_val
+            else:
+                inv = Inventory(
+                    user_id=user_id,
+                    product_name=name,
+                    stock=stock_val,
+                    safety_stock_level=safety_val,
+                )
+                session.add(inv)
+
+        await session.commit()
+
+        # Build confirmation message
+        msg_lines = []
+        if parsed_items:
+            msg_lines.append(f"✅ Saved/updated {len(parsed_items)} inventory item(s).")
+        if errors:
+            msg_lines.append("⚠️ Some lines could not be processed:\n" + "\n".join(errors))
+
+        reply_text = "\n".join(msg_lines) if msg_lines else "No valid inventory lines were found."
+
+        bot_msg = Message(
+            room_id=room_id,
+            user_id=None,
+            content=reply_text,
+            is_bot=True,
+        )
+        session.add(bot_msg)
+        await session.commit()
+        await session.refresh(bot_msg)
+        await broadcast_message(session, bot_msg, room_id)
 
 async def handle_inventory_command(content: str, room_id: int, user_id: int):
     """
@@ -195,6 +313,22 @@ async def maybe_answer_with_llm(content: str, room_id: int, user_id: int):
         # You can still allow @gro in the same message if you want,
         # but simplest is to return here:
         return
+    
+    # ==== AI Commands ====
+    if "@gro analyze" in content.lower():
+        await handle_gro_command("analyze", room_id, user_id)
+        return
+    if "@gro menu" in content.lower():
+        await handle_gro_command("menu", room_id, user_id)
+        return
+    
+    if "@grp restock" in content.lower():
+        await handle_gro_command("restock", room_id, user_id)
+        return
+    
+    if "@gro plan" in content.lower():
+        pass
+    
 
     # 2) Regular LLM flow with @gro
     if "@gro" not in content:
@@ -239,6 +373,67 @@ async def maybe_answer_with_llm(content: str, room_id: int, user_id: int):
         await session.commit()
         await session.refresh(bot_msg)
         await broadcast_message(session, bot_msg, room_id)
+        
+async def handle_gro_command(kind: str, room_id: int, user_id: int):
+    """
+    kind: "analyze", "menu", restock"
+    """
+    
+    async with SessionLocal() as session:
+        # get user model
+        user = await session.get(User, user_id)
+        model_name = user.preferred_llm_model if user else "openai"
+        
+        # get inventory
+        inv_res = await session.execute(
+            select(Inventory).where(Inventory.user_id == user_id)
+        )
+        inventory_items = [
+            {
+                "product_name": row.product_name,
+                "stock": row.stock,
+                "safety_stock_level": row.safety_stcok_level
+            }
+            for row in inv_res.scalars().all()
+        ]
+        
+        # get grocery catalog (for restock)
+        if kind == "restock":
+            gro_res = await session.execute(select(GroceryItem).limit(300))
+            grocery_list = [
+                {
+                    "title": g.title,
+                    "sub_category": g.sub_category,
+                    "price": float(g.price),
+                    "rating": g.rating_value or 0
+                }
+                for g in gro_res.scalar().all()
+            ]
+        else:
+            grocery_list = []
+            
+        # RUN AI MODULE
+        if kind == "analyze":
+            ai_result = await analyze_inventory(inventory_items, model_name=model_name)
+        elif kind == "menu":
+            ai_result = await generate_menu(inventory_items, model_name=model_name)
+        elif kind == "restock":
+            ai_result = await generate_restock_plan(inventory_items, grocery_list, model_name=model_name)
+        else:
+            ai_result = {"narrative": "Unknown command."}
+            
+        # Send to chat
+        bot_msg = Message(
+            room_id=room_id,
+            user_id=None,
+            content=json.dumps(ai_result, indent=2),
+            is_bot=True,
+        )
+        session.add(bot_msg)
+        await session.commit()
+        await session.refresh(bot_msg)
+        await broadcast_message(session, bot_msg, room_id)
+    
 
 # --------- Routes ---------
 @app.on_event("startup")
