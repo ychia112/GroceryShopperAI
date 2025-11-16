@@ -1,3 +1,4 @@
+print("🔥 Running backend version: 2025-11-16 01:00")
 import os
 import asyncio
 from typing import Optional, List
