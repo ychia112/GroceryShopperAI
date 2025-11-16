@@ -65,3 +65,15 @@ CREATE INDEX idx_rooms_owner_id ON rooms(owner_id);
 -- INSERT INTO rooms (name, owner_id) VALUES
 -- ('General', 1),
 -- ('Announcements', 1);
+
+CREATE TABLE IF NOT EXISTS inventory (
+  product_id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,  -- restaurant/user that owns this product
+  product_name VARCHAR(255) NOT NULL,
+  stock INT NOT NULL DEFAULT 0,
+  safety_stock_level INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_inventory_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY uniq_user_product (user_id, product_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Per-user/restaurant inventory items';
