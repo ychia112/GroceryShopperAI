@@ -47,6 +47,7 @@ class RoomMember(Base):
     room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id", ondelete="CASCADE"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     joined_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    deleted_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), nullable=True)
     room = relationship("Room", back_populates="members")
     user = relationship("User", back_populates="room_members")
 
