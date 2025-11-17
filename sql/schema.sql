@@ -77,3 +77,26 @@ CREATE TABLE IF NOT EXISTS inventory (
   CONSTRAINT fk_inventory_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   UNIQUE KEY uniq_user_product (user_id, product_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Per-user/restaurant inventory items';
+
+-- Convert from load_groceries.py
+CREATE TABLE grocery_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    sub_category VARCHAR(120) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    rating_value FLOAT NULL,
+    rating_count INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX idx_title (title),
+    INDEX idx_sub_category (sub_category)
+);
+
+-- ===========================================
+-- Migration: Add deleted_at to room_members
+-- ===========================================
+ALTER TABLE room_members
+    ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP NULL;
+
+CREATE INDEX IF NOT EXISTS idx_room_members_deleted_at 
+    ON room_members (room_id, deleted_at);
