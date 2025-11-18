@@ -25,6 +25,7 @@ from llm_modules.inventory_analyzer import analyze_inventory
 from llm_modules.menu_generator import generate_menu
 from llm_modules.procurement_planner import generate_restock_plan
 from llm_modules.chat_procurement_planner import generate_procurement_plan
+from llm_modules.recommend_utils import get_relevant_grocery_items
 
 load_dotenv()
 
@@ -241,23 +242,48 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
             for row in inv_res.scalars().all()
         ]
         
-        gro_res = await session.execute(select(GroceryItem).limit(2000))
-        grocery_items = [
-            {
-                "title": g.title,
-                "sub_category": g.sub_category,
-                "price": float(g.price),
-                "rating": g.rating_value or 0.0,
-            }
-            for g in gro_res.scalars().all()
+        # All grocery_items
+        # gro_res = await session.execute(select(GroceryItem).limit(2000))
+        # grocery_items = [
+        #     {
+        #         "title": g.title,
+        #         "sub_category": g.sub_category,
+        #         "price": float(g.price),
+        #         "rating": g.rating_value or 0.0,
+        #     }
+        #     for g in gro_res.scalars().all()
+        # ]
+
+        # ---- Build relevant grocery_items list based on low-stock products ----
+        low_stock_items = [
+            item for item in inventory_items
+            if item["stock"] < item["safety_stock_level"]
         ]
 
+        relevant_items = []
+
+        for item in low_stock_items:
+            matches = await get_relevant_grocery_items(session, item["product_name"], limit=20)
+            
+            for g in matches:
+                relevant_items.append({
+                    "title": g.title,
+                    "sub_category": g.sub_category,
+                    "price": float(g.price),
+                    "rating": g.rating_value or 0.0,
+                })
+
+        # remove duplicates by title
+        seen = set()
+        grocery_items = []
+        for item in relevant_items:
+            key = item["title"]
+            if key not in seen:
+                seen.add(key)
+                grocery_items.append(item)
         
         # Run AI Module
         if kind == "analyze":
-            print("\n=== DEBUG INVENTORY_ITEMS GOING TO ANALYZE ===")
-            print(inventory_items)
-            
             ai_result = await analyze_inventory(inventory_items, grocery_items, chat_history, model_name=model_name)
             event_type = "inventory_analysis"
         elif kind == "menu":

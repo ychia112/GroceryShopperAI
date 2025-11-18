@@ -17,10 +17,11 @@ async def generate_restock_plan(inventory_items: List[Dict], grocery_items: List
     Your tasks:
     - Identify items where stock < safety_stock_level.
     - Recommend restock quantity based on shortage severity.
+    - Use ONLY the provided grocery_catalog_sample list.
     - Suggest supplier using grocery_items provided.
     - Estimate price from grocery_items.
     - Provide a friendly narrative.
-
+    
     RULES:
     - Output ONLY VALID JSON.
     - No explanations outside the JSON block.

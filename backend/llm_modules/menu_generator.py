@@ -34,7 +34,7 @@ async def generate_menu(inventory_items: List[Dict], grocery_items: List[Dict[st
     
     IMPORTANT
     - You MUST output VALID JSON ONLY.
-    - If you reference grocery items, they MUST come from the given grocery_items list.
+    - The grocery_items list is already filtered to relevant products. You MUST NOT invent any items outside the list.
     - "narrative" must be human-friendly.
     
     JSON OUTPUT FORMAT:
