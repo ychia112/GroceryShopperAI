@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 from llm import chat_completion
 from llm_modules.llm_utils import format_chat_history, extract_json
 
-async def analyze_inventory(inventory_items: List[Dict[str, Any]], grocery_items: List[Dict[str, Any]], chat_history: List[Dict[str, str]] | None = None, model_name: str = "openai") -> Dict[str, Any]:
+async def analyze_inventory(inventory_items, low_stock_items, healthy_items, grocery_items, chat_history: List[Dict[str, str]] | None = None, model_name: str = "openai") -> Dict[str, Any]:
     """
     LLM Inventory Analyzer
     Analyze current inventory and generate restock suggestions.
@@ -14,56 +14,28 @@ async def analyze_inventory(inventory_items: List[Dict[str, Any]], grocery_items
     chat_text = format_chat_history(chat_history) if chat_history else ""
     
     system_prompt = """
-    You are an AI expert Inventory Analyst for a grocery store or restaurant.
-    
-    Your responsibilities:
-    1. Identify items that are low or critical stock.
-    2. Estimate recommended restock quantity such that:
-       recommended_restock_qty = max(0, safety_stock_level - stock) + safety_buffer
-       (safety_buffer = 1–3)
-    3. Provide a friendly summary narrative.
-    4. Recommend suitable grocery catalog items for restock if needed.
-    
-    RULES:
-    - You MUST output ONLY VALID JSON.
-    - Do NOT include any non-JSON text before or after JSON.
-    - The grocery_items list is already a pre-filtered subset of relevant products. Do NOT invent or search for any items outside this list.
-    - Grocery recommendations MUST come from the provided grocery_items list.
+    You are an Inventory Analyst.
 
+    IMPORTANT:
+    - Low-stock / healthy classification is ALREADY computed by the backend.
+    - DO NOT recalculate stock status.
+    - Only generate narrative and confirm the structure.
+    - Grocery items are already matched; do NOT invent items.
 
-    JSON OUTPUT FORMAT:
+    JSON ONLY:
     {
         "narrative": "<string>",
-        "low_stock": [
-            {
-                "product_name": "<string>",
-                "stock": <int>,
-                "safety_stock_level": <int>,
-                "status": "low" | "critical",
-                "recommended_restock_qty": <int>,
-                "recommended_grocery_items": [
-                    {
-                        "title": "<string>",
-                        "price": <float>,
-                        "rating": <float>
-                    }
-                ]
-            }
-        ],
-        "healthy": [
-            {
-                "product_name": "<string>",
-                "stock": <int>,
-                "safety_stock_level": <int>
-            }
-        ]
+        "low_stock": [...],
+        "healthy": [...]
     }
     """
     
     user_payload = {
         "inventory_items": inventory_items,
+        "low_stock": low_stock_items,
+        "healthy": healthy_items,
         "grocery_items": grocery_items,
-        "chat_history": chat_text,
+        "chat_history": chat_text
     }
     
     raw = await chat_completion([
@@ -75,6 +47,6 @@ async def analyze_inventory(inventory_items: List[Dict[str, Any]], grocery_items
     
     return {
         "narrative": parsed.get("narrative", "Inventory analysis generated."),
-        "low_stock": parsed.get("low_stock", []),
-        "healthy": parsed.get("healthy", []),
+        "low_stock": low_stock_items,
+        "healthy": healthy_items
     }

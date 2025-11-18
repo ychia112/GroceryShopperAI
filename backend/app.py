@@ -228,8 +228,20 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
             for m in msgs
         ]
         
+        # Load All grocery items
+        gro_res = await session.execute(select(GroceryItem).limit(1000))
+        all_grocery_items = [
+            {
+                "title": g.title,
+                "sub_category": g.sub_category,
+                "price": float(g.price),
+                "rating": g.rating_value or 0.0,
+            }
+            for g in gro_res.scalars().all()
+        ]
         
-        # get inventory
+        
+        # Load inventory
         inv_res = await session.execute(
             select(Inventory).where(Inventory.user_id == user_id)
         )
@@ -241,35 +253,22 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
             }
             for row in inv_res.scalars().all()
         ]
-        
-        # 🔍 DEBUG 1
-        print("DEBUG INVENTORY:", json.dumps(inventory_items, indent=2))
-        
-        # All grocery_items
-        # gro_res = await session.execute(select(GroceryItem).limit(2000))
-        # grocery_items = [
-        #     {
-        #         "title": g.title,
-        #         "sub_category": g.sub_category,
-        #         "price": float(g.price),
-        #         "rating": g.rating_value or 0.0,
-        #     }
-        #     for g in gro_res.scalars().all()
-        # ]
 
-        # ---- Build relevant grocery_items list based on low-stock products ----
+
+        # ---- Pre-calc: Low-stock vs healthy ----
         low_stock_items = [
             item for item in inventory_items
             if item["stock"] < item["safety_stock_level"]
         ]
+        healthy_items = [
+            item for item in inventory_items
+            if item["stock"] >= item["safety_stock_level"]
+        ]
         
-        # 🔍 DEBUG 2
-        print("DEBUG LOW_STOCK:", json.dumps(low_stock_items, indent=2))
-
+        # ---- Pre-calc: relevant grocery catalog ----
         relevant_items = []
-
         for item in low_stock_items:
-            matches = await get_relevant_grocery_items(session, item["product_name"], limit=20)
+            matches = await get_relevant_grocery_items(session, item["product_name"], limit=30)
             
             for g in matches:
                 relevant_items.append({
@@ -281,25 +280,39 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
 
         # remove duplicates by title
         seen = set()
-        grocery_items = []
+        matched_grocery_items = []
         for item in relevant_items:
             key = item["title"]
             if key not in seen:
                 seen.add(key)
-                grocery_items.append(item)
-                
-        # 🔍 DEBUG 3
-        print("DEBUG GROCERY:", json.dumps(grocery_items[:5], indent=2))
+                matched_grocery_items.append(item)
+        
         
         # Run AI Module
         if kind == "analyze":
-            ai_result = await analyze_inventory(inventory_items, grocery_items, chat_history, model_name=model_name)
+            ai_result = await analyze_inventory(
+                inventory_items=inventory_items, 
+                low_stock_items=low_stock_items, 
+                healthy_items=healthy_items, 
+                grocery_items=matched_grocery_items, 
+                chat_history=chat_history,
+                model_name=model_name,
+            )
             event_type = "inventory_analysis"
         elif kind == "menu":
-            ai_result = await generate_menu(inventory_items, grocery_items, chat_history, model_name=model_name)
+            ai_result = await generate_menu(
+                inventory_items=inventory_items, 
+                grocery_items=all_grocery_items,
+                chat_history=chat_history,
+                model_name=model_name
+            )
             event_type = "menu_suggestions"
         elif kind == "restock":
-            ai_result = await generate_restock_plan(inventory_items, grocery_items, model_name=model_name)
+            ai_result = await generate_restock_plan(
+                low_stock_items=low_stock_items, 
+                grocery_items=matched_grocery_items, 
+                model_name=model_name
+            )
             event_type = "restock_plan"
         else:
             ai_result = {"narrative": "Unknown command.", "data": {}}

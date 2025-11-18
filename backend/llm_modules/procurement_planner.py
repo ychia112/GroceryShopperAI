@@ -5,7 +5,7 @@ from llm import chat_completion
 from llm_modules.llm_utils import extract_json
 
 
-async def generate_restock_plan(inventory_items: List[Dict], grocery_items: List[Dict], model_name:str = "openai"):
+async def generate_restock_plan(low_stock_items, grocery_items, model_name:str = "openai"):
     """
     Inventory-based retock
     Generate AI-powered weekly restock plan using inventory + grocery catalog.
@@ -14,20 +14,12 @@ async def generate_restock_plan(inventory_items: List[Dict], grocery_items: List
     system_prompt = """
     You are an AI Procurement Planner for a restaurant.
     
-    Your tasks:
-    - Identify items where stock < safety_stock_level.
-    - Recommend restock quantity based on shortage severity.
-    - Use ONLY the provided grocery_catalog_sample list.
-    - Suggest supplier using grocery_items provided.
-    - Estimate price from grocery_items.
-    - Provide a friendly narrative.
-    
-    RULES:
-    - Output ONLY VALID JSON.
-    - No explanations outside the JSON block.
-    - Use EXACT FIELD NAMES below.
-    
-    JSON FORMAT:
+    IMPORTANT:
+    - Low-stock items are ALREADY identified.
+    - Produce a shopping plan ONLY for these items.
+    - Grocery_items list is pre-filtered; do NOT invent items.
+
+    JSON OUTPUT:
     {
         "goal": "",
         "summary": "<string>",
@@ -35,28 +27,23 @@ async def generate_restock_plan(inventory_items: List[Dict], grocery_items: List
         "items": [
             {
                 "name": "<string>",
-                "quantity": <int>,
-                "notes": "<string>",
-                "price_estimate": <float>,
-                "supplier": "<string>"
+                "quantity": "<string or number>",
+                "notes": "<string>"
             }
         ]
     }
     """
     
     
-    user_payload = json.dumps(
-        {
-            "inventory": inventory_items,
-            "grocery_catalog_sample": grocery_items,
-        }, 
-        indent=2
-    )
+    user_payload = {
+        "low_stock": low_stock_items,
+        "grocery_items": grocery_items
+    }
     
     raw = await chat_completion(
         [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_payload}
+            {"role": "user", "content": json.dumps(user_payload, indent=2)}
         ], 
         model_name=model_name,
     )

@@ -5,7 +5,7 @@ from llm import chat_completion
 from llm_modules.llm_utils import extract_json, format_chat_history
 
 
-async def generate_menu(inventory_items: List[Dict], grocery_items: List[Dict[str, Any]], chat_history: List[Dict[str, str]] | None = None, model_name: str = "openai") -> Dict[str, Any]:
+async def generate_menu(inventory_items, grocery_items, chat_history: List[Dict[str, str]] | None = None, model_name: str = "openai") -> Dict[str, Any]:
     """
     Generate recommended dishes based on:
     - User inventory
@@ -37,21 +37,15 @@ async def generate_menu(inventory_items: List[Dict], grocery_items: List[Dict[st
     - The grocery_items list is already filtered to relevant products. You MUST NOT invent any items outside the list.
     - "narrative" must be human-friendly.
     
-    JSON OUTPUT FORMAT:
+    JSON OUTPUT:
     {
         "narrative": "<string>",
         "dishes": [
             {
                 "name": "<string>",
-                "ingredients_used": ["Tomatoes", "Cheese"],
-                "missing_ingredients": ["Basil"],
-                "recommended_grocery_items": [
-                    {
-                        "title": "<string>",
-                        "price": <float>,
-                        "rating": <float>
-                    }
-                ]
+                "ingredients_used": [...],
+                "missing_ingredients": [...],
+                "suggested_suppliers_needed": [...]
             }
         ]
     }
