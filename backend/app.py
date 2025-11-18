@@ -242,6 +242,9 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
             for row in inv_res.scalars().all()
         ]
         
+        # 🔍 DEBUG 1
+        print("DEBUG INVENTORY:", json.dumps(inventory_items, indent=2))
+        
         # All grocery_items
         # gro_res = await session.execute(select(GroceryItem).limit(2000))
         # grocery_items = [
@@ -259,6 +262,9 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
             item for item in inventory_items
             if item["stock"] < item["safety_stock_level"]
         ]
+        
+        # 🔍 DEBUG 2
+        print("DEBUG LOW_STOCK:", json.dumps(low_stock_items, indent=2))
 
         relevant_items = []
 
@@ -281,6 +287,9 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
             if key not in seen:
                 seen.add(key)
                 grocery_items.append(item)
+                
+        # 🔍 DEBUG 3
+        print("DEBUG GROCERY:", json.dumps(grocery_items[:5], indent=2))
         
         # Run AI Module
         if kind == "analyze":
