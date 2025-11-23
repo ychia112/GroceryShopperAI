@@ -28,3 +28,5 @@ flutter_frontend/ios/Runner/GeneratedPluginRegistrant.*
 # Android
 android/.gradle/
 android/app/build/
+
+*.sqlite

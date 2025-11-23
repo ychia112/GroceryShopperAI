@@ -100,7 +100,3 @@ ALTER TABLE room_members
 
 CREATE INDEX IF NOT EXISTS idx_room_members_deleted_at 
     ON room_members (room_id, deleted_at);
-
--- ADD EMBEDDING Column
-ALTER TABLE grocery_items
-ADD COLUMN embedding JSON NULL;
