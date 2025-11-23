@@ -9,15 +9,7 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
-    curl \
-    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
-
-# ---------------------------------------------------------
-# Install Google Cloud SDK (provides gsutil)
-# ---------------------------------------------------------
-RUN curl -sSL https://sdk.cloud.google.com | bash
-ENV PATH="/root/google-cloud-sdk/bin:${PATH}"
 
 # ---------------------------------------------------------
 # Workdir
@@ -25,7 +17,7 @@ ENV PATH="/root/google-cloud-sdk/bin:${PATH}"
 WORKDIR /app
 
 # ---------------------------------------------------------
-# Copy requirements only, install deps
+# Copy requirements & Install deps
 # ---------------------------------------------------------
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
@@ -35,27 +27,15 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 # ---------------------------------------------------------
 COPY backend /app/backend
 
+# 切換工作目錄到 backend，這樣 uvicorn 才能找到 app.py
 WORKDIR /app/backend
 
 # ---------------------------------------------------------
-# Create entrypoint.sh (download embeddings → run backend)
-# ---------------------------------------------------------
-RUN echo '#!/bin/bash\n\
-set -e\n\
-echo "[ENTRYPOINT] Downloading embeddings.sqlite from GCS..."\n\
-gsutil cp gs://groceryshopperai-embeddings/embeddings.sqlite /tmp/embeddings.sqlite || echo "[WARN] Could not download embeddings.sqlite"\n\
-echo "[ENTRYPOINT] Starting FastAPI..."\n\
-exec uvicorn app:app --host 0.0.0.0 --port ${PORT:-8080}\n' \
-> /app/backend/entrypoint.sh
-
-RUN chmod +x /app/backend/entrypoint.sh
-
-# ---------------------------------------------------------
-# Cloud Run expects container to listen on $PORT
+# Cloud Run Configuration
 # ---------------------------------------------------------
 EXPOSE 8080
 
 # ---------------------------------------------------------
-# Use entrypoint.sh instead of direct uvicorn
+# Start Command
 # ---------------------------------------------------------
-ENTRYPOINT ["/app/backend/entrypoint.sh"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080"]

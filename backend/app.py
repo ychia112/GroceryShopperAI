@@ -1,4 +1,4 @@
-print("🔥 Running backend version: 2025-11-20 22:00")
+print("🔥 Running backend version: 2025-11-23 00:00")
 import os
 import json
 import asyncio
@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from dotenv import load_dotenv
+from google.cloud import storage
 
 from db import SessionLocal, init_db, User, Message, Room, RoomMember, Inventory, GroceryItem, ShoppingList
 from auth import get_password_hash, verify_password, create_access_token, get_current_user_token
@@ -33,6 +34,35 @@ APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
 APP_PORT = int(os.getenv("APP_PORT", "8000"))
 GROCERY_CSV_PATH = os.getenv("GROCERY_CSV_PATH", "./GroceryDataset.csv")
 CSV_HEADERS = ["Sub Category", " Price ", "Rating", "Title"]
+
+# ========= Embeddings Initialization (Cloud Run + GCS Auto Download) =========
+LOCAL_EMBEDDINGS_PATH = "/tmp/embeddings.sqlite"
+EMBEDDINGS_BUCKET = "groceryshopperai-embeddings"
+EMBEDDINGS_BLOB = "embeddings.sqlite"
+
+def download_embeddings_if_needed():
+    """
+    Checks if the embeddings database exists locally (in /tmp).
+    If not, downloads it from Google Cloud Storage.
+    Required for Cloud Run which has an ephemeral filesystem.
+    """
+    if os.path.exists(LOCAL_EMBEDDINGS_PATH):
+        print(f"[Startup] Found existing embeddings database at {LOCAL_EMBEDDINGS_PATH}")
+        return
+
+    print(f"[Startup] Downloading {EMBEDDINGS_BLOB} from bucket {EMBEDDINGS_BUCKET}...")
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(EMBEDDINGS_BUCKET)
+        blob = bucket.blob(EMBEDDINGS_BLOB)
+        blob.download_to_filename(LOCAL_EMBEDDINGS_PATH)
+        print(f"[Startup] Download complete: {LOCAL_EMBEDDINGS_PATH}")
+    except Exception as e:
+        print(f"[Startup] ❌ Failed to download embeddings: {e}")
+        # Depending on your logic, you might want to raise e here to stop the container
+
+# ---------------------------------------------
+
 
 app = FastAPI(title="GroceryShopperAI Chat Backend")
 
@@ -454,10 +484,13 @@ async def maybe_answer_with_llm(content: str, room_id: int, user_id: int):
 @app.on_event("startup")
 async def on_startup():
     try:
+        # Download the vector DB first
+        download_embeddings_if_needed()
+        
         await init_db()
         print("DB initialized successfully")
     except Exception as e:
-        print(f"DB init failed: {e}")
+        print(f"Startup failed: {e}")
 
 @app.post("/api/signup")
 async def signup(payload: AuthPayload, session: AsyncSession = Depends(get_db)):
