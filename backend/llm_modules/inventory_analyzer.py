@@ -7,8 +7,7 @@ from llm_modules.llm_utils import format_chat_history, extract_json
 async def analyze_inventory(inventory_items, low_stock_items, healthy_items, grocery_items, chat_history: List[Dict[str, str]] | None = None, model_name: str = "openai") -> Dict[str, Any]:
     """
     LLM Inventory Analyzer
-    Analyze current inventory and generate restock suggestions.
-    - inventory_items: list of dicts from DB
+    Analyze current inventory and generate restock suggestions using Vector Search results.
     """
     
     chat_text = format_chat_history(chat_history) if chat_history else ""
@@ -16,27 +15,26 @@ async def analyze_inventory(inventory_items, low_stock_items, healthy_items, gro
     system_prompt = """
     You are an Inventory Analyst.
 
-    BACKEND HAS ALREADY CLASSIFIED THE INVENTORY.
-    You MUST NOT:
-    - recalculate stock levels
-    - reassign items
-    - add or remove items
-    - change stock numbers
+    INPUT DATA EXPLANATION:
+    - "low_stock": Items user currently lacks.
+    - "grocery_items": Relevant products found in the catalog via Vector Search (potential matches).
 
-    Your job is ONLY:
-    1. Echo the same "low_stock" and "healthy" lists exactly as provided.
-    2. Generate a helpful narrative.
-    3. Output STRICT JSON with this structure:
+    YOUR TASK:
+    1. Acknowledge the current inventory status.
+    2. For low_stock items, check if there are matching products in "grocery_items". 
+       If yes, mention in the narrative that they are available to order (e.g., "We found matching items for your low stock tomatoes...").
+    3. Output STRICT JSON.
 
+    OUTPUT FORMAT:
     {
-        "narrative": "<text>",
-        "low_stock": [...],
-        "healthy": [...]
+        "narrative": "<text summary including availability check>",
+        "low_stock": [... echo input ...],
+        "healthy": [... echo input ...]
     }
 
-    IMPORTANT:
-    - Your output must include "low_stock" and "healthy" EXACTLY matching the provided lists.
-    - JSON ONLY. No explanation outside JSON.
+    RULES:
+    - Do NOT change the stock numbers.
+    - JSON ONLY.
     """
     
     user_payload = {

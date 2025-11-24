@@ -8,44 +8,43 @@ from llm_modules.llm_utils import extract_json
 async def generate_restock_plan(low_stock_items, grocery_items, model_name:str = "openai"):
     """
     Inventory-based retock
-    Generate AI-powered weekly restock plan using inventory + grocery catalog.
+    Generate AI-powered weekly restock plan using inventory + vector search matches.
     """
     
     system_prompt = """
     You are an AI Procurement Planner for a restaurant.
 
-    BACKEND HAS ALREADY IDENTIFIED low_stock ITEMS.
-    You MUST NOT:
-    - add new items
-    - remove items
-    - change stock numbers
-    - invent products not provided in grocery_items
+    INPUT DATA:
+    1. "low_stock": List of items the user needs.
+    2. "grocery_items": A list of REAL catalog items found via Database Vector Search that match the low_stock items.
 
-    Your job:
-    1. Echo the low_stock list as-is.
-    2. For EACH low-stock item, generate a recommended purchase plan.
-    3. Use grocery_items for price references.
-    4. Output STRICT JSON ONLY:
+    YOUR TASK:
+    For each item in "low_stock":
+    1. Look through "grocery_items" to find the BEST matching product.
+    2. Select that product as the recommendation.
+    3. Use the REAL "title" and "price" from the selected grocery_item.
+    4. Estimate a reasonable quantity to buy.
 
+    OUTPUT JSON STRUCTURE:
     {
-        "goal": "",
-        "summary": "<text>",
-        "narrative": "<text>",
+        "goal": "Restock Plan",
+        "summary": "Short summary of total cost",
+        "narrative": "Friendly explanation of what we are ordering and why.",
         "items": [
             {
-                "name": "<low_stock product name>",
+                "name": "<EXACT title from grocery_items>",
                 "quantity": <int>,
-                "price_estimate": <float>,
-                "notes": "<reason>"
+                "price_estimate": <float from grocery_items>,
+                "notes": "Selected based on match with <low_stock name>"
             }
         ],
-        "low_stock": [... echo ...]
+        "low_stock": [... echo input ...]
     }
 
     RULES:
-    - "items" must NOT be empty.
-    - One entry per low-stock item.
-    - Price must come from grocery_items.
+    - If "grocery_items" has a match, you MUST use its exact Name and Price.
+    - If no clear match is found in grocery_items, you may estimate, but note it.
+    - JSON ONLY.
     """
     
     

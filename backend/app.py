@@ -267,19 +267,6 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
             for m in msgs
         ]
         
-        # Load Full grocery catalog
-        gro_res = await session.execute(select(GroceryItem))
-        full_catelog = [
-            {
-                "title": g.title,
-                "sub_category": g.sub_category,
-                "price": float(g.price),
-                "rating": g.rating_value or 0.0,
-            }
-            for g in gro_res.scalars().all()
-        ]
-        
-        
         # Load inventory
         inv_res = await session.execute(
             select(Inventory).where(Inventory.user_id == user_id)
@@ -303,9 +290,20 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
             if item["stock"] >= item["safety_stock_level"]
         ]
         
-        # ---- Embedding matching for all low-stock items ----
+        # ---- Embedding matching (RAG Core) ----
+        # Strategies:
+        # 1. If it's "analyze" or "restock": similar items of "low_stock"
+        # 2. If it's "menu": we need to know the real items that correspond to "healthy_items"
+        # We do vector search for all invetory items.
+        
+        search_targets = []
+        if kind == "menu":
+            search_targets = inventory_items
+        else:
+            search_targets = low_stock_items
+        
         grocery_items = []
-        for item in low_stock_items:
+        for item in search_targets:
             matches = await get_relevant_grocery_items(session, item["product_name"], limit=5)
             for m in matches:
                 grocery_items.append({
@@ -347,7 +345,7 @@ async def handle_gro_command(kind: str, room_id: int, user_id: int):
         elif kind == "menu":
             ai_result = await generate_menu(
                 inventory_items=inventory_items, 
-                grocery_items=full_catelog,
+                grocery_items=merged,
                 chat_history=chat_history,
                 model_name=model_name
             )

@@ -8,8 +8,8 @@ from llm_modules.llm_utils import extract_json, format_chat_history
 async def generate_menu(inventory_items, grocery_items, chat_history: List[Dict[str, str]] | None = None, model_name: str = "openai") -> Dict[str, Any]:
     """
     Generate recommended dishes based on:
-    - User inventory
-    - Grocery_items catalog
+    - User inventory (Curreent Stock)
+    - Grocery_items catalog (Vector Search Results containing Real Products)
     - Chat context
     """
     chat_text = format_chat_history(chat_history) if chat_history else ""
@@ -17,38 +17,45 @@ async def generate_menu(inventory_items, grocery_items, chat_history: List[Dict[
     system_prompt = """
     You are an AI Executive Chef for a restaurant.
     
-    Your tasks:
-    - Suggest realistic dishes the user can cook TODAY.
-    - Prefer using ingredients already available in inventory.
-    - Identify missing ingredients.
-    - Suggest substitutions.
-    - Recommend grocery items from the provided grocery_items list.
+    INPUT DATA:
+    1. "inventory_items": What the user currently has in the kitchen.
+    2. "grocery_items": A list of REAL-WORLD PRODUCTS found via Vector Search that match the user's inventory.
 
-    RULES:
-    - Output ONLY valid JSON.
-    - Do NOT add explanations outside of JSON.
-    - Use EXACT keys:
-        "ingredients_used"
-        "missing_ingredients"
-        "recommended_grocery_items"
+    YOUR TASK:
+    Create a menu of 3-5 realistic dishes based on the current inventory.
     
-    IMPORTANT
-    - You MUST output VALID JSON ONLY.
-    - The grocery_items list is already filtered to relevant products. You MUST NOT invent any items outside the list.
-    - "narrative" must be human-friendly.
-    
-    JSON OUTPUT:
+    FOR EACH DISH:
+    1. Name the dish.
+    2. List "ingredients_used" (from inventory).
+    3. List "missing_ingredients" (what needs to be bought).
+    4. Fill "suggested_suppliers_needed":
+       - Check "grocery_items" to see if there is a specific product match for the missing ingredient.
+       - If yes, use the EXACT "title" and "price" from the list.
+       - If no match found in grocery_items, leave it empty or list a generic name.
+
+    JSON OUTPUT STRUCTURE:
     {
-        "narrative": "<string>",
+        "narrative": "Brief, appetizing summary of the menu.",
         "dishes": [
             {
-                "name": "<string>",
-                "ingredients_used": [...],
-                "missing_ingredients": [...],
-                "suggested_suppliers_needed": [...]
+                "name": "<Dish Name>",
+                "ingredients_used": ["<item from inventory>", ...],
+                "missing_ingredients": ["<generic name>", ...],
+                "suggested_suppliers_needed": [
+                    {
+                        "product_name": "<EXACT title from grocery_items>",
+                        "price": <float>,
+                        "reason": "Best match for <missing ingredient>"
+                    }
+                ]
             }
         ]
     }
+
+    RULES:
+    - Output ONLY valid JSON.
+    - Do NOT hallucinate products. Only use products present in "grocery_items" for the suggested_suppliers_needed field.
+    - If a missing ingredient is simple (like "Salt" or "Water") and not in the list, just ignore it in supplier list.
     """
     
     user_payload = {
