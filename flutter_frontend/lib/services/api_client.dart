@@ -19,15 +19,15 @@ String _getApiBase() {
     final backendHost = 'localhost';
     final backendPort = 8000;
     //return 'http://$backendHost:$backendPort/api';
-    return 'https://gsai-backend-52101160479.us-west1.run.app/api';
+    return 'https://groceryshopperai-52101160479.us-west1.run.app/api';
   } else if (useAndroidEmulator) {
     // Android Emulator
     //return 'http://10.0.2.2:8000/api';
-    return 'https://gsai-backend-52101160479.us-west1.run.app/api';
+    return 'https://groceryshopperai-52101160479.us-west1.run.app/api';
   } else {
     // iOS 或 macOS
     //return 'http://localhost:8000/api';
-    return 'https://gsai-backend-52101160479.us-west1.run.app/api';
+    return 'https://groceryshopperai-52101160479.us-west1.run.app/api';
   }
 }
 
@@ -36,15 +36,15 @@ String _getWsUrl() {
     // Web: 使用 localhost:8000 for development
     // In production, change to your backend URL
     //return 'ws://localhost:8000/ws';
-    return 'wss://gsai-backend-52101160479.us-west1.run.app/ws';
+    return 'wss://groceryshopperai-52101160479.us-west1.run.app/ws';
   } else if (useAndroidEmulator) {
     // Android Emulator
     //return 'ws://10.0.2.2:8000/ws';
-    return 'wss://gsai-backend-52101160479.us-west1.run.app/ws';
+    return 'wss://groceryshopperai-52101160479.us-west1.run.app/ws';
   } else {
     // iOS 或 macOS
     //return 'ws://localhost:8000/ws';
-    return 'wss://gsai-backend-52101160479.us-west1.run.app/ws';
+    return 'wss://groceryshopperai-52101160479.us-west1.run.app/ws';
   }
 }
 
